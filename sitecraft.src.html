@@ -1,0 +1,857 @@
+<meta charset="utf-8">
+<title>SiteCraft</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/*GRAPES_CSS*/
+</style>
+<style>
+/* Layout: one-screen app — top bar, left drawer (blocks/layers), canvas, right drawer (style/settings). Drawers overlay on narrow screens. */
+:root {
+  --bg: #e9ebef;
+  --panel: #f7f8fa;
+  --panel-2: #eef0f4;
+  --line: #d5d9e1;
+  --fg: #1d2330;
+  --muted: #5d6676;
+  --accent: #2f5bea;
+  --accent-ink: #ffffff;
+  --accent-soft: #dfe7fd;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1218; --panel: #171b23; --panel-2: #1e2330; --line: #2b3242;
+    --fg: #e6e9ef; --muted: #8f98a8; --accent: #6f8fff; --accent-ink: #0c1020; --accent-soft: #232c4a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1218; --panel: #171b23; --panel-2: #1e2330; --line: #2b3242;
+  --fg: #e6e9ef; --muted: #8f98a8; --accent: #6f8fff; --accent-ink: #0c1020; --accent-soft: #232c4a;
+  color-scheme: dark;
+}
+
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 13px; overflow: hidden; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.app { height: 100%; display: grid; grid-template-rows: auto 1fr; }
+
+/* Top bar */
+.bar { display: flex; align-items: center; gap: 12px; padding: 8px 16px; background: var(--panel); border-bottom: 1px solid var(--line); min-width: 0; }
+.brand { font-family: var(--font-display); font-weight: 700; font-size: 18px; letter-spacing: -0.01em; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+.brand-mark { width: 22px; height: 22px; border-radius: 5px; background: var(--accent); display: grid; place-items: center; }
+.brand-mark svg { width: 14px; height: 14px; }
+.brand small { font-family: var(--font-mono); font-weight: 400; font-size: 11px; color: var(--muted); letter-spacing: 0; }
+.spacer { flex: 1; }
+.group { display: flex; gap: 2px; padding: 2px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 7px; }
+.btn { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border: 0; border-radius: 5px; background: transparent; cursor: pointer; white-space: nowrap; }
+.btn:hover { background: var(--line); }
+.btn[aria-pressed="true"] { background: var(--panel); box-shadow: 0 1px 2px rgba(0,0,0,.12); color: var(--accent); }
+.btn svg { width: 16px; height: 16px; flex: none; }
+.btn.primary { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.btn.primary:hover { filter: brightness(1.08); background: var(--accent); }
+.btn-label { display: inline; }
+.drawer-toggle { display: none; }
+.status { font-family: var(--font-mono); font-size: 11px; color: var(--muted); white-space: nowrap; }
+
+/* Workspace */
+.work { display: grid; grid-template-columns: 250px 1fr 270px; min-height: 0; position: relative; }
+.side { background: var(--panel); display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+.side.left { border-right: 1px solid var(--line); }
+.side.right { border-left: 1px solid var(--line); }
+.tabs { display: flex; border-bottom: 1px solid var(--line); }
+.tab { flex: 1; height: 38px; border: 0; background: transparent; cursor: pointer; font-weight: 500; color: var(--muted); border-bottom: 2px solid transparent; text-transform: uppercase; font-size: 11px; letter-spacing: .06em; }
+.tab[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--accent); }
+.pane { flex: 1; overflow: auto; min-height: 0; }
+.pane-hint { padding: 12px 14px 4px; color: var(--muted); font-size: 12px; line-height: 1.45; }
+.canvas-wrap { position: relative; min-width: 0; min-height: 0; }
+#gjs { height: 100% !important; border: 0; }
+
+/* GrapesJS theme mapping onto our tokens */
+.gjs-one-bg { background-color: var(--panel); }
+.gjs-two-color { color: var(--fg); }
+.gjs-three-bg { background-color: var(--accent); color: var(--accent-ink); }
+.gjs-four-color, .gjs-four-color-h:hover { color: var(--accent); }
+.gjs-editor { font-family: var(--font-body); }
+.gjs-cv-canvas { background: var(--bg); width: 100%; height: 100%; top: 0; }
+.gjs-frame-wrapper { padding: 0; }
+.gjs-blocks-c { padding: 8px 10px 16px; gap: 8px; display: grid; grid-template-columns: 1fr 1fr; }
+.gjs-block { width: auto; min-height: 78px; margin: 0; padding: 10px 6px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel-2); box-shadow: none; color: var(--fg); font-family: var(--font-body); font-size: 12px; font-weight: 500; transition: border-color .15s, transform .15s; }
+.gjs-block:hover { border-color: var(--accent); color: var(--accent); }
+.gjs-block svg { width: 34px; height: 34px; fill: none; stroke: currentColor; stroke-width: 1.5; }
+.gjs-block-label { margin-top: 6px; }
+.gjs-block-category .gjs-title { background: transparent; border-bottom: 1px solid var(--line); font-family: var(--font-body); font-weight: 600; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 12px 14px 8px; }
+.gjs-block-category { border-bottom: 0; }
+.gjs-sm-sector .gjs-sm-sector-title, .gjs-layer-title, .gjs-trt-header { background: var(--panel-2); border-bottom: 1px solid var(--line); font-family: var(--font-body); letter-spacing: .02em; }
+.gjs-sm-sector-title { padding: 10px 12px; font-weight: 600; }
+.gjs-sm-properties { padding: 8px 8px 12px; }
+.gjs-field, .gjs-clm-tags #gjs-clm-new { background: var(--panel-2); border: 1px solid var(--line); color: var(--fg); border-radius: 5px; }
+.gjs-sm-label, .gjs-label { color: var(--muted); }
+.gjs-clm-tags { padding: 10px 12px; border-bottom: 1px solid var(--line); }
+.gjs-clm-tag { background: var(--accent); color: var(--accent-ink); border-radius: 4px; }
+.gjs-layer { background: transparent; }
+.gjs-layer.gjs-selected .gjs-layer-item { background: var(--accent-soft); }
+.gjs-layer-item { border-bottom: 1px solid var(--line); }
+.gjs-mdl-dialog { background: var(--panel); color: var(--fg); border-radius: 10px; border: 1px solid var(--line); max-width: min(900px, calc(100vw - 32px)); }
+.gjs-mdl-header { border-bottom: 1px solid var(--line); }
+.gjs-mdl-title { font-family: var(--font-display); font-weight: 700; font-size: 16px; }
+.gjs-off-prv { display: none !important; }
+.work.previewing { grid-template-columns: 1fr; }
+.work.previewing .side { display: none; }
+.gjs-cm-editor-c { display: flex; flex-wrap: wrap; gap: 12px; }
+.gjs-cm-editor { flex: 1 1 320px; min-width: 0; }
+.CodeMirror { font-family: var(--font-mono); font-size: 12px; }
+.gjs-pn-panels, .gjs-pn-panel { display: none; }
+
+/* Menu bar */
+.menubar { display: flex; gap: 1px; }
+.menu { position: relative; }
+.menu-btn { height: 30px; padding: 0 10px; border: 0; border-radius: 5px; background: transparent; cursor: pointer; font-weight: 500; }
+.menu-btn:hover, .menu-btn[aria-expanded="true"] { background: var(--panel-2); }
+.menu-btn[aria-expanded="true"] { color: var(--accent); }
+.menu-list { position: absolute; top: calc(100% + 4px); left: 0; z-index: 1000; min-width: 250px; padding: 5px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 12px 32px rgba(0,0,0,.22); }
+.menu-item { display: grid; grid-template-columns: 18px 1fr auto; align-items: center; gap: 8px; width: 100%; padding: 7px 10px 7px 6px; border: 0; border-radius: 5px; background: transparent; cursor: pointer; text-align: left; white-space: nowrap; }
+.menu-item:hover:not(:disabled), .menu-item:focus-visible { background: var(--accent); color: var(--accent-ink); outline: none; }
+.menu-item:hover:not(:disabled) .menu-key, .menu-item:focus-visible .menu-key { color: inherit; opacity: .85; }
+.menu-item:disabled { opacity: .45; cursor: default; }
+.menu-check { font-size: 12px; text-align: center; }
+.menu-key { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+.menu-sep { height: 1px; margin: 5px 4px; background: var(--line); }
+.menu-heading { padding: 6px 10px 3px 32px; font-size: 10.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.docinfo { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+.docname { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; min-width: 6ch; flex: none; }
+.docinfo .status { overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 1240px) { .docinfo .status { display: none; } }
+.docname.dirty::after { content: " •"; color: var(--accent); }
+
+/* In-page confirm dialog */
+.ask-backdrop { position: fixed; inset: 0; z-index: 2000; background: rgba(10,14,22,.45); display: grid; place-items: center; padding: 16px; }
+.ask { width: min(420px, 100%); background: var(--panel); color: var(--fg); border: 1px solid var(--line); border-radius: 10px; padding: 20px; box-shadow: 0 20px 50px rgba(0,0,0,.3); }
+.ask h2 { margin: 0 0 8px; font-family: var(--font-display); font-size: 18px; text-wrap: balance; }
+.ask p { margin: 0 0 18px; color: var(--muted); line-height: 1.5; }
+.ask-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.ask .btn { border: 1px solid var(--line); }
+.ask .btn.danger { background: #c2412d; border-color: #c2412d; color: #fff; }
+
+/* Help content inside the GrapesJS modal */
+.help { font-family: var(--font-body); font-size: 13px; line-height: 1.55; color: var(--fg); }
+.help h3 { font-family: var(--font-display); font-size: 15px; margin: 16px 0 6px; }
+.help h3:first-child { margin-top: 0; }
+.help p, .help ol { margin: 0 0 10px; max-width: 62ch; }
+.help table { border-collapse: collapse; width: 100%; }
+.help td { padding: 6px 8px; border-bottom: 1px solid var(--line); }
+.help td:last-child { text-align: right; font-family: var(--font-mono); font-size: 12px; white-space: nowrap; }
+.help a { color: var(--accent); }
+.gjs-mdl-content { color: var(--fg); }
+
+.theme-btn { width: 34px; height: 34px; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
+.theme-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; }
+/* Toast */
+.toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 9px 14px; border-radius: 7px; font-weight: 500; box-shadow: 0 6px 20px rgba(0,0,0,.2); z-index: 100; }
+
+/* Narrow screens: side panels become overlay drawers */
+@media (max-width: 980px) {
+  .work { grid-template-columns: 1fr; }
+  .side { position: absolute; top: 0; bottom: 0; width: min(300px, 86vw); z-index: 20; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
+  .side.left { left: 0; }
+  .side.right { right: 0; }
+  .side:not(.open) { display: none; }
+  .drawer-toggle { display: inline-flex; }
+  .btn-label { display: none; }
+  .brand small, .status { display: none; }
+  .docname { max-width: 120px; }
+}
+@media (max-width: 720px) {
+  .bar { flex-wrap: wrap; }
+  .docinfo { display: none; }
+}
+@media (max-width: 520px) {
+  .bar { gap: 6px; padding-inline: 10px; }
+  .menu-btn { padding: 0 7px; }
+  .brand-text { display: none; }
+  .hide-xs { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="app">
+  <header class="bar">
+    <button class="btn drawer-toggle" id="toggle-left" aria-label="Show blocks and layers" title="Blocks and layers">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    </button>
+    <div class="brand">
+      <span class="brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4"><path d="M4 7h16M4 12h10M4 17h13"/></svg></span>
+      <span class="brand-text">SiteCraft</span>
+    </div>
+    <nav class="menubar" id="menubar" role="menubar" aria-label="Main menu"></nav>
+    <div class="docinfo">
+      <span class="docname" id="docname">Untitled</span>
+      <span class="status" id="status">Autosaves in this browser</span>
+    </div>
+    <div class="spacer"></div>
+
+    <div class="group" role="group" aria-label="Preview size">
+      <button class="btn" id="dev-desktop" data-device="Desktop" aria-pressed="true" title="Desktop">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="4" width="20" height="13" rx="1.5"/><path d="M8 21h8M12 17v4"/></svg>
+      </button>
+      <button class="btn" id="dev-tablet" data-device="Tablet" aria-pressed="false" title="Tablet (768px)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M11 18h2"/></svg>
+      </button>
+      <button class="btn" id="dev-mobile" data-device="Mobile" aria-pressed="false" title="Phone (375px)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>
+      </button>
+    </div>
+
+    <div class="group hide-xs" role="group" aria-label="History">
+      <button class="btn" id="undo" title="Undo (Ctrl+Z)" aria-label="Undo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></svg>
+      </button>
+      <button class="btn" id="redo" title="Redo (Ctrl+Shift+Z)" aria-label="Redo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m15 14 5-5-5-5"/><path d="M20 9H9a5 5 0 0 0 0 10h3"/></svg>
+      </button>
+    </div>
+
+    <div class="group" role="group" aria-label="View">
+      <button class="btn" id="outline" aria-pressed="true" title="Show element outlines" aria-label="Show element outlines">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-dasharray="3 2"><rect x="3" y="3" width="18" height="18" rx="1"/></svg>
+      </button>
+      <button class="btn" id="preview" title="Preview without editor chrome" aria-label="Preview" aria-pressed="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+        <span class="btn-label">Preview</span>
+      </button>
+      <button class="btn" id="code" title="View the HTML and CSS" aria-label="View code">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m8 8-4 4 4 4M16 8l4 4-4 4"/></svg>
+        <span class="btn-label">Code</span>
+      </button>
+    </div>
+
+    <button class="btn primary" id="copy" title="Copy the page as one HTML file">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+      <span class="btn-label">Copy HTML</span>
+    </button>
+    <button class="btn theme-btn" id="theme-btn" type="button" aria-label="Switch between light and dark" title="Switch between light and dark"></button>
+    <button class="btn drawer-toggle" id="toggle-right" aria-label="Show style panel" title="Style">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>
+    </button>
+  </header>
+
+  <main class="work">
+    <aside class="side left" id="left">
+      <div class="tabs" role="tablist">
+        <button class="tab" role="tab" id="tab-blocks" aria-selected="true" data-pane="pane-blocks">Blocks</button>
+        <button class="tab" role="tab" id="tab-layers" aria-selected="false" data-pane="pane-layers">Layers</button>
+      </div>
+      <div class="pane" id="pane-blocks">
+        <p class="pane-hint">Drag a block onto the page. Double-click text on the page to edit it.</p>
+        <div id="blocks"></div>
+      </div>
+      <div class="pane" id="pane-layers" hidden><div id="layers"></div></div>
+    </aside>
+
+    <div class="canvas-wrap"><div id="gjs"></div></div>
+
+    <aside class="side right" id="right">
+      <div class="tabs" role="tablist">
+        <button class="tab" role="tab" id="tab-style" aria-selected="true" data-pane="pane-style">Style</button>
+        <button class="tab" role="tab" id="tab-settings" aria-selected="false" data-pane="pane-settings">Settings</button>
+      </div>
+      <div class="pane" id="pane-style">
+        <div id="selectors"></div>
+        <p class="pane-hint" id="style-hint">Select something on the page to style it.</p>
+        <div id="styles"></div>
+      </div>
+      <div class="pane" id="pane-settings" hidden>
+        <p class="pane-hint">Links, image alt text, IDs and other attributes for the selected element.</p>
+        <div id="traits"></div>
+      </div>
+    </aside>
+  </main>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<div class="ask-backdrop" id="ask" hidden>
+  <div class="ask" role="alertdialog" aria-modal="true" aria-labelledby="ask-title" aria-describedby="ask-body">
+    <h2 id="ask-title"></h2>
+    <p id="ask-body"></p>
+    <div class="ask-actions">
+      <button class="btn" id="ask-cancel">Cancel</button>
+      <button class="btn primary" id="ask-ok">OK</button>
+    </div>
+  </div>
+</div>
+<input type="file" id="file-input" accept=".html,.htm,text/html" hidden>
+
+<script src="https://unpkg.com/grapesjs@0.21.13/dist/grapes.min.js"></script>
+<script>
+(function () {
+  const STORAGE_KEY = 'sitecraft-project-v1';
+
+  const icon = (d) => `<svg viewBox="0 0 40 40">${d}</svg>`;
+  const placeholderImg = (w, h, label) => 'data:image/svg+xml;utf8,' + encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><rect width="100%" height="100%" fill="#d9cbb5"/><circle cx="${w*0.3}" cy="${h*0.35}" r="${h*0.12}" fill="#c4ae8c"/><path d="M0 ${h} L${w*0.35} ${h*0.55} L${w*0.6} ${h*0.8} L${w*0.78} ${h*0.62} L${w} ${h} Z" fill="#b39a74"/><text x="50%" y="${h-18}" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#6b5a40">${label}</text></svg>`);
+
+  // Starter page: a small bakery site, so the editor opens on something real to edit.
+  const starter = `
+<header class="nav">
+  <a class="logo" href="#">Crumb &amp; Co.</a>
+  <nav class="links"><a href="#menu">Menu</a><a href="#visit">Visit</a><a href="#order" class="pill">Order ahead</a></nav>
+</header>
+<section class="hero">
+  <div class="hero-text">
+    <p class="eyebrow">Neighbourhood bakery · since 2014</p>
+    <h1>Sourdough baked at 4 a.m., gone by noon.</h1>
+    <p class="lead">Naturally leavened loaves, laminated pastries and one very good cinnamon bun. Open Tuesday to Sunday.</p>
+    <a class="button" href="#order">See today's bake</a>
+  </div>
+  <img class="hero-img" src="${placeholderImg(560, 420, 'Replace with a photo')}" alt="Fresh loaves on a cooling rack">
+</section>
+<section class="menu" id="menu">
+  <h2>On the counter today</h2>
+  <div class="cards">
+    <div class="card"><h3>Country sourdough</h3><p>72-hour ferment, 20% whole wheat.</p><p class="price">$9</p></div>
+    <div class="card"><h3>Cardamom knot</h3><p>Brioche dough, brown butter, cardamom sugar.</p><p class="price">$4.50</p></div>
+    <div class="card"><h3>Seeded rye</h3><p>Dense, dark, sunflower and flax.</p><p class="price">$10</p></div>
+  </div>
+</section>
+<footer class="footer" id="visit"><p>214 Mill Street · Tue–Sun 7:00–14:00</p><p>hello@crumbandco.example</p></footer>`;
+
+  const starterCss = `
+*{box-sizing:border-box}
+body{margin:0;font-family:Georgia,'Times New Roman',serif;color:#2b2118;background:#fbf7f0}
+.nav{display:flex;justify-content:space-between;align-items:center;padding:20px 6%;flex-wrap:wrap;gap:12px}
+.logo{font-weight:700;font-size:22px;color:#2b2118;text-decoration:none}
+.links{display:flex;gap:22px;align-items:center;font-family:Arial,sans-serif;font-size:15px}
+.links a{color:#2b2118;text-decoration:none}
+.pill{background:#2b2118;color:#fbf7f0 !important;padding:9px 16px;border-radius:999px}
+.hero{display:flex;flex-wrap:wrap;gap:40px;align-items:center;padding:48px 6% 64px}
+.hero-text{flex:1 1 340px}
+.eyebrow{font-family:Arial,sans-serif;text-transform:uppercase;letter-spacing:.12em;font-size:12px;color:#8a6a3f;margin:0 0 12px}
+h1{font-size:48px;line-height:1.05;margin:0 0 18px;font-weight:700}
+.lead{font-size:19px;line-height:1.5;max-width:34em;margin:0 0 26px;color:#4a3d30}
+.button{display:inline-block;background:#b5542a;color:#fff;font-family:Arial,sans-serif;font-weight:700;padding:14px 22px;border-radius:6px;text-decoration:none}
+.hero-img{flex:1 1 320px;max-width:100%;border-radius:10px;display:block}
+.menu{padding:56px 6%;background:#f2eadc}
+h2{font-size:32px;margin:0 0 24px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px}
+.card{background:#fffdf9;padding:22px;border-radius:8px;border:1px solid #e3d6c0}
+.card h3{margin:0 0 8px;font-size:21px}
+.card p{margin:0 0 8px;font-family:Arial,sans-serif;font-size:15px;line-height:1.5;color:#5a4a3a}
+.price{font-weight:700;color:#b5542a !important}
+.footer{padding:32px 6%;font-family:Arial,sans-serif;font-size:14px;color:#6b5a48;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.footer p{margin:0}
+@media (max-width:600px){h1{font-size:34px}.hero{padding-top:24px}}`;
+
+  let storage = { type: 'local', autosave: true, stepsBeforeSave: 1, options: { local: { key: STORAGE_KEY } } };
+  try { localStorage.getItem('x'); } catch (e) { storage = false; }
+
+  const editor = grapesjs.init({
+    container: '#gjs',
+    height: '100%',
+    fromElement: false,
+    projectData: { pages: [{ component: starter, styles: starterCss }] },
+    storageManager: storage,
+    panels: { defaults: [] },
+    cssIcons: '',
+    canvas: { styles: [] },
+    blockManager: { appendTo: '#blocks' },
+    layerManager: { appendTo: '#layers' },
+    styleManager: { appendTo: '#styles' },
+    selectorManager: { appendTo: '#selectors', componentFirst: true },
+    traitManager: { appendTo: '#traits' },
+    deviceManager: {
+      devices: [
+        { id: 'Desktop', name: 'Desktop', width: '' },
+        { id: 'Tablet', name: 'Tablet', width: '768px', widthMedia: '992px' },
+        { id: 'Mobile', name: 'Mobile', width: '375px', widthMedia: '600px' },
+      ],
+    },
+  });
+
+  // ---- Blocks ----
+  const bm = editor.BlockManager;
+  const blocks = [
+    ['section', 'Section', 'Layout', icon('<rect x="5" y="9" width="30" height="22" rx="2"/>'),
+      '<section style="padding:56px 6%"><h2>New section</h2><p style="font-family:Arial,sans-serif;line-height:1.5">Write something here.</p></section>'],
+    ['cols2', '2 columns', 'Layout', icon('<rect x="5" y="9" width="13" height="22" rx="2"/><rect x="22" y="9" width="13" height="22" rx="2"/>'),
+      '<div style="display:flex;flex-wrap:wrap;gap:24px;padding:24px 6%"><div style="flex:1 1 260px;min-height:80px;padding:12px"><p>Left column</p></div><div style="flex:1 1 260px;min-height:80px;padding:12px"><p>Right column</p></div></div>'],
+    ['cols3', '3 columns', 'Layout', icon('<rect x="4" y="9" width="9" height="22" rx="2"/><rect x="15.5" y="9" width="9" height="22" rx="2"/><rect x="27" y="9" width="9" height="22" rx="2"/>'),
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;padding:24px 6%"><div style="padding:12px;min-height:80px"><p>One</p></div><div style="padding:12px;min-height:80px"><p>Two</p></div><div style="padding:12px;min-height:80px"><p>Three</p></div></div>'],
+    ['heading', 'Heading', 'Basic', icon('<path d="M11 10v20M29 10v20M11 20h18"/>'),
+      { type: 'text', tagName: 'h2', content: 'A clear heading' }],
+    ['text', 'Text', 'Basic', icon('<path d="M8 12h24M8 18h24M8 24h24M8 30h14"/>'),
+      { type: 'text', tagName: 'p', content: 'A paragraph of text. Double-click to edit it.', style: { 'line-height': '1.5' } }],
+    ['image', 'Image', 'Basic', icon('<rect x="6" y="8" width="28" height="24" rx="2"/><circle cx="15" cy="16" r="3"/><path d="m6 28 9-8 7 6 5-4 7 6"/>'),
+      { type: 'image', src: placeholderImg(600, 360, 'Double-click to replace'), style: { 'max-width': '100%', display: 'block' }, attributes: { alt: '' } }],
+    ['button', 'Button', 'Basic', icon('<rect x="5" y="13" width="30" height="14" rx="7"/><path d="M14 20h12"/>'),
+      '<a href="#" style="display:inline-block;background:#2f5bea;color:#fff;font-family:Arial,sans-serif;font-weight:700;padding:12px 20px;border-radius:6px;text-decoration:none">Call to action</a>'],
+    ['link', 'Link', 'Basic', icon('<path d="M17 23a5 5 0 0 0 7 0l5-5a5 5 0 0 0-7-7l-1 1"/><path d="M23 17a5 5 0 0 0-7 0l-5 5a5 5 0 0 0 7 7l1-1"/>'),
+      { type: 'link', content: 'A text link', attributes: { href: '#' } }],
+    ['hero', 'Hero', 'Sections', icon('<rect x="4" y="8" width="32" height="24" rx="2"/><path d="M9 15h16M9 20h11"/><rect x="9" y="24" width="9" height="4" rx="2"/>'),
+      '<section style="padding:80px 6%;background:#1d2330;color:#fff"><h1 style="font-size:46px;line-height:1.1;margin:0 0 16px;max-width:14em">Say what you do in one line</h1><p style="font-family:Arial,sans-serif;font-size:18px;line-height:1.5;max-width:32em;margin:0 0 24px;opacity:.85">One or two sentences that explain who it is for and why it matters.</p><a href="#" style="display:inline-block;background:#fff;color:#1d2330;font-family:Arial,sans-serif;font-weight:700;padding:13px 22px;border-radius:6px;text-decoration:none">Get started</a></section>'],
+    ['card', 'Card', 'Sections', icon('<rect x="8" y="6" width="24" height="28" rx="2"/><rect x="8" y="6" width="24" height="11"/><path d="M12 22h16M12 27h10"/>'),
+      '<div style="background:#fff;border:1px solid #e1e4ea;border-radius:8px;overflow:hidden;max-width:320px"><img src="' + placeholderImg(320, 180, 'Image') + '" style="width:100%;display:block" alt=""><div style="padding:18px"><h3 style="margin:0 0 6px">Card title</h3><p style="margin:0;font-family:Arial,sans-serif;line-height:1.5;color:#555">A short description.</p></div></div>'],
+    ['quote', 'Quote', 'Sections', icon('<path d="M10 26c0-6 2-10 7-12M22 26c0-6 2-10 7-12"/>'),
+      '<blockquote style="margin:32px 6%;padding:8px 0 8px 22px;border-left:4px solid #b5542a;font-size:22px;line-height:1.4">“The best bread in the city, and the queue proves it.”<footer style="font-family:Arial,sans-serif;font-size:14px;margin-top:10px;color:#777">— A happy customer</footer></blockquote>'],
+    ['form', 'Contact form', 'Sections', icon('<rect x="7" y="7" width="26" height="6" rx="1"/><rect x="7" y="16" width="26" height="6" rx="1"/><rect x="7" y="25" width="12" height="7" rx="2"/>'),
+      '<form style="display:grid;gap:12px;max-width:420px;padding:24px 6%;font-family:Arial,sans-serif"><label>Name<input name="name" style="display:block;width:100%;padding:10px;margin-top:4px;border:1px solid #ccc;border-radius:5px"></label><label>Email<input name="email" type="email" style="display:block;width:100%;padding:10px;margin-top:4px;border:1px solid #ccc;border-radius:5px"></label><label>Message<textarea name="message" rows="4" style="display:block;width:100%;padding:10px;margin-top:4px;border:1px solid #ccc;border-radius:5px"></textarea></label><button type="submit" style="justify-self:start;background:#1d2330;color:#fff;border:0;padding:12px 20px;border-radius:6px;font-weight:700">Send</button></form>'],
+    ['video', 'Video', 'Media', icon('<rect x="5" y="9" width="30" height="22" rx="2"/><path d="m17 15 8 5-8 5Z"/>'),
+      { type: 'video', src: '', style: { width: '100%', height: '320px' } }],
+    ['map', 'Map', 'Media', icon('<path d="M20 34s10-9 10-17a10 10 0 0 0-20 0c0 8 10 17 10 17Z"/><circle cx="20" cy="17" r="3.5"/>'),
+      { type: 'map', style: { width: '100%', height: '320px' } }],
+  ];
+  blocks.forEach(([id, label, category, media, content]) => bm.add(id, { label, category, media, content }));
+
+  // ---- Panel tabs ----
+  document.querySelectorAll('.tabs').forEach((list) => {
+    list.addEventListener('click', (e) => {
+      const tab = e.target.closest('.tab'); if (!tab) return;
+      list.querySelectorAll('.tab').forEach((t) => {
+        const on = t === tab; t.setAttribute('aria-selected', on);
+        document.getElementById(t.dataset.pane).hidden = !on;
+      });
+    });
+  });
+
+  // ---- Drawers on narrow screens ----
+  const left = document.getElementById('left'), right = document.getElementById('right');
+  document.getElementById('toggle-left').onclick = () => { left.classList.toggle('open'); right.classList.remove('open'); };
+  document.getElementById('toggle-right').onclick = () => { right.classList.toggle('open'); left.classList.remove('open'); };
+  editor.on('block:drag:start', () => left.classList.remove('open'));
+
+  // ---- Style hint ----
+  const hint = document.getElementById('style-hint');
+  editor.on('component:toggled', () => { hint.hidden = !!editor.getSelected(); });
+
+  // ---- Toolbar ----
+  const devBtns = document.querySelectorAll('[data-device]');
+  devBtns.forEach((b) => b.onclick = () => {
+    editor.setDevice(b.dataset.device);
+    devBtns.forEach((x) => x.setAttribute('aria-pressed', x === b));
+  });
+  document.getElementById('undo').onclick = () => editor.UndoManager.undo();
+  document.getElementById('redo').onclick = () => editor.UndoManager.redo();
+
+  const outlineBtn = document.getElementById('outline');
+  editor.on('load', () => editor.runCommand('core:component-outline'));
+  outlineBtn.onclick = () => {
+    const on = outlineBtn.getAttribute('aria-pressed') !== 'true';
+    editor[on ? 'runCommand' : 'stopCommand']('core:component-outline');
+    outlineBtn.setAttribute('aria-pressed', on);
+  };
+
+  // Preview: the toolbar button toggles it on and off; Esc also exits (even with focus inside the page).
+  const previewBtn = document.getElementById('preview');
+  const previewLabel = previewBtn.querySelector('.btn-label');
+  const isPreviewing = () => editor.Commands.isActive('core:preview');
+  function togglePreview() {
+    if (isPreviewing()) { editor.stopCommand('core:preview'); return; }
+    editor.Modal.close();
+    editor.runCommand('core:preview');
+    toast('Previewing. Click Exit preview or press Esc to keep editing.');
+  }
+  previewBtn.onclick = togglePreview;
+  editor.Keymaps.add('sc:exit-preview', 'esc', () => { if (isPreviewing()) editor.stopCommand('core:preview'); });
+  editor.on('run:core:preview', () => {
+    document.querySelector('.work').classList.add('previewing');
+    previewBtn.setAttribute('aria-pressed', 'true');
+    previewLabel.textContent = 'Exit preview';
+  });
+  editor.on('stop:core:preview', () => {
+    document.querySelector('.work').classList.remove('previewing');
+    previewBtn.setAttribute('aria-pressed', 'false');
+    previewLabel.textContent = 'Preview';
+  });
+
+  // Code: the toolbar button opens the code window, or closes it if it is already open.
+  function toggleCode() {
+    if (editor.Modal.isOpen()) { editor.Modal.close(); return; }
+    if (isPreviewing()) editor.stopCommand('core:preview');
+    editor.runCommand('export-template');
+  }
+  document.getElementById('code').onclick = toggleCode;
+
+  function fullHtml() {
+    return `<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n<title>My site</title>\n<style>\n${editor.getCss()}\n</style>\n</head>\n<body>\n${editor.getHtml().replace(/^<body[^>]*>|<\/body>$/g, '')}\n</body>\n</html>\n`;
+  }
+  document.getElementById('copy').onclick = () => {
+    const html = fullHtml();
+    navigator.clipboard.writeText(html)
+      .then(() => toast('Copied. Paste it into a file named index.html.'))
+      .catch(() => { editor.runCommand('export-template'); toast('Copy was blocked here. Copy the code from this window instead.'); });
+  };
+
+  // =====================================================================
+  // Document state: file name, unsaved changes, file handle
+  // =====================================================================
+  const NAME_KEY = 'sitecraft-docname';
+  const blankCss = 'body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#222}';
+  const docnameEl = document.getElementById('docname');
+  const inFrame = (() => { try { return window.self !== window.top; } catch (e) { return true; } })();
+  let docName = 'Untitled';
+  let fileHandle = null;   // set when opened/saved through the browser's file picker (Chrome, Edge)
+  let dirty = false;
+  let ready = false;
+
+  try { docName = localStorage.getItem(NAME_KEY) || 'Untitled'; } catch (e) {}
+
+  function setDocName(name) {
+    docName = name || 'Untitled';
+    try { localStorage.setItem(NAME_KEY, docName); } catch (e) {}
+    renderDoc();
+  }
+  function setDirty(v) { dirty = v; renderDoc(); }
+  function renderDoc() {
+    docnameEl.textContent = docName;
+    docnameEl.classList.toggle('dirty', dirty);
+    docnameEl.title = dirty ? docName + ' has unsaved changes' : docName;
+    document.title = docName + ' – SiteCraft';
+  }
+  editor.on('load', () => setTimeout(() => { ready = true; renderDoc(); }, 300));
+  editor.on('update', () => { if (ready && !dirty) setDirty(true); });
+
+  function loadPage(html, css, name, handle) {
+    editor.select(null);
+    editor.setComponents(html);
+    editor.setStyle(css);
+    editor.UndoManager.clear();
+    fileHandle = handle || null;
+    setDocName(name);
+    setTimeout(() => setDirty(false), 0);
+  }
+
+  // In-page confirm dialog (browser confirm() is blocked inside embedded viewers)
+  const askEl = document.getElementById('ask');
+  function ask({ title, body, ok = 'OK', danger = false }) {
+    return new Promise((resolve) => {
+      document.getElementById('ask-title').textContent = title;
+      document.getElementById('ask-body').textContent = body;
+      const okBtn = document.getElementById('ask-ok'), cancelBtn = document.getElementById('ask-cancel');
+      okBtn.textContent = ok;
+      okBtn.classList.toggle('danger', danger);
+      askEl.hidden = false; cancelBtn.focus();
+      const done = (v) => { askEl.hidden = true; okBtn.onclick = cancelBtn.onclick = askEl.onkeydown = null; resolve(v); };
+      okBtn.onclick = () => done(true);
+      cancelBtn.onclick = () => done(false);
+      askEl.onkeydown = (e) => { if (e.key === 'Escape') done(false); };
+    });
+  }
+  async function okToDiscard(action) {
+    if (!dirty) return true;
+    return ask({ title: `Discard changes to ${docName}?`, body: `Your unsaved changes will be lost if you ${action}. Use File › Save first to keep them.`, ok: 'Discard changes', danger: true });
+  }
+
+  // ---- File actions ----
+  async function newBlank() {
+    if (!(await okToDiscard('start a new page'))) return;
+    loadPage('', blankCss, 'Untitled');
+    toast('New blank page');
+  }
+  async function newStarter() {
+    if (!(await okToDiscard('start from the template'))) return;
+    loadPage(starter, starterCss, 'Untitled');
+    toast('New page from the starter template');
+  }
+  async function clearPage() {
+    const ok = await ask({ title: 'Clear the page?', body: 'This removes every block and style from the page. You can undo it with Edit › Undo.', ok: 'Clear page', danger: true });
+    if (!ok) return;
+    editor.select(null);
+    editor.setComponents('');
+    editor.setStyle(blankCss);
+    toast('Page cleared');
+  }
+  async function closeFile() {
+    if (!(await okToDiscard('close this file'))) return;
+    loadPage('', blankCss, 'Untitled');
+    toast('File closed');
+  }
+
+  function parseHtmlFile(text) {
+    const doc = new DOMParser().parseFromString(text, 'text/html');
+    const css = [...doc.querySelectorAll('style')].map((s) => s.textContent).join('\n');
+    doc.querySelectorAll('style, script').forEach((n) => n.remove());
+    return { html: doc.body ? doc.body.innerHTML : '', css };
+  }
+  const fileInput = document.getElementById('file-input');
+  fileInput.onchange = async () => {
+    const f = fileInput.files[0]; fileInput.value = '';
+    if (!f) return;
+    const { html, css } = parseHtmlFile(await f.text());
+    loadPage(html, css, f.name, null);
+    toast('Opened ' + f.name);
+  };
+  async function openFile() {
+    if (!(await okToDiscard('open another file'))) return;
+    if (window.showOpenFilePicker && !inFrame) {
+      try {
+        const [h] = await window.showOpenFilePicker({ types: [{ description: 'Web page', accept: { 'text/html': ['.html', '.htm'] } }] });
+        const f = await h.getFile();
+        const { html, css } = parseHtmlFile(await f.text());
+        loadPage(html, css, f.name, h);
+        toast('Opened ' + f.name);
+        return;
+      } catch (e) { if (e.name === 'AbortError') return; }
+    }
+    fileInput.click();
+  }
+
+  function suggestedName() { return /\.html?$/i.test(docName) ? docName : (docName === 'Untitled' ? 'index' : docName) + '.html'; }
+  function downloadHtml(name) {
+    const url = URL.createObjectURL(new Blob([fullHtml()], { type: 'text/html' }));
+    const a = Object.assign(document.createElement('a'), { href: url, download: name });
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+  async function save(saveAs) {
+    // Embedded viewers block downloads, so show the code instead.
+    if (inFrame) { editor.runCommand('export-template'); toast('Saving files is not available here. Copy the code from this window.'); return; }
+    try {
+      if (fileHandle && !saveAs) {
+        const w = await fileHandle.createWritable(); await w.write(fullHtml()); await w.close();
+        setDirty(false); toast('Saved ' + docName);
+        return;
+      }
+      if (window.showSaveFilePicker) {
+        const h = await window.showSaveFilePicker({ suggestedName: suggestedName(), types: [{ description: 'Web page', accept: { 'text/html': ['.html'] } }] });
+        const w = await h.createWritable(); await w.write(fullHtml()); await w.close();
+        fileHandle = h; setDocName(h.name); setDirty(false); toast('Saved ' + h.name);
+        return;
+      }
+    } catch (e) { if (e.name === 'AbortError') return; }
+    const name = suggestedName();
+    downloadHtml(name); setDocName(name); setDirty(false);
+    toast('Downloaded ' + name + ' to your Downloads folder');
+  }
+  function copyHtml() {
+    navigator.clipboard.writeText(fullHtml())
+      .then(() => toast('Copied. Paste it into a file named index.html.'))
+      .catch(() => { editor.runCommand('export-template'); toast('Copy was blocked here. Copy the code from this window instead.'); });
+  }
+
+  // ---- View helpers ----
+  function showTab(tabId) {
+    const tab = document.getElementById(tabId);
+    tab.click();
+    const side = tab.closest('.side');
+    if (getComputedStyle(document.getElementById('toggle-left')).display !== 'none') {
+      side.classList.add('open');
+      (side === left ? right : left).classList.remove('open');
+    }
+  }
+  function setDevice(name) { document.querySelector(`[data-device="${name}"]`).click(); }
+  const THEME_KEY = 'sitecraft-theme';
+  function getTheme() { return document.documentElement.dataset.theme || 'system'; }
+  function setTheme(t) {
+    if (t === 'system') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = t;
+    try { localStorage.setItem(THEME_KEY, t); } catch (e) {}
+    if (typeof paintThemeButton === 'function') paintThemeButton();
+  }
+  try { const t = localStorage.getItem(THEME_KEY); if (t) setTheme(t); } catch (e) {}
+
+  // Light / dark toggle in the top bar
+  const THEME_ICONS = { sun: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.7 4.7l1.6 1.6M17.7 17.7l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.7 19.3l1.6-1.6M17.7 6.3l1.6-1.6"/></svg>', moon: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.5A8.5 8.5 0 1 1 9.5 3.5a7 7 0 0 0 11 11z"/></svg>' };
+  const themeIsDark = () => (document.documentElement.dataset.theme ? document.documentElement.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches);
+  function paintThemeButton() {
+    const b = document.getElementById('theme-btn'); if (!b) return;
+    const dark = themeIsDark();
+    b.innerHTML = dark ? THEME_ICONS.sun : THEME_ICONS.moon;
+    b.title = dark ? 'Switch to light mode' : 'Switch to dark mode';
+    b.setAttribute('aria-label', b.title);
+  }
+  document.getElementById('theme-btn').addEventListener('click', () => { setTheme(themeIsDark() ? 'light' : 'dark'); paintThemeButton(); });
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', paintThemeButton);
+  paintThemeButton();
+
+  // ---- Help ----
+  function helpModal(title, html) { editor.Modal.open({ title, content: `<div class="help">${html}</div>` }); }
+  const shortcutsHtml = `<table>
+    <tr><td>Open a file</td><td>Ctrl+O</td></tr>
+    <tr><td>Save</td><td>Ctrl+S</td></tr>
+    <tr><td>Save as</td><td>Ctrl+Shift+S</td></tr>
+    <tr><td>Undo</td><td>Ctrl+Z</td></tr>
+    <tr><td>Redo</td><td>Ctrl+Shift+Z</td></tr>
+    <tr><td>Copy selected element</td><td>Ctrl+C</td></tr>
+    <tr><td>Paste after selected element</td><td>Ctrl+V</td></tr>
+    <tr><td>Delete selected element</td><td>Delete</td></tr>
+    <tr><td>Select parent element</td><td>A</td></tr>
+    <tr><td>Select first child</td><td>D</td></tr>
+    <tr><td>Select next / previous sibling</td><td>S / W</td></tr>
+    <tr><td>Leave preview</td><td>Esc</td></tr>
+  </table><p style="margin-top:10px;color:var(--muted)">On a Mac, use Cmd instead of Ctrl. Letter shortcuts work when you are not editing text.</p>`;
+  const startHtml = `
+    <h3>Build a page</h3>
+    <ol>
+      <li>Drag blocks from the <b>Blocks</b> panel on the left onto the page.</li>
+      <li>Double-click any text on the page to edit it. Double-click an image to replace it.</li>
+      <li>Click an element, then change its look in the <b>Style</b> panel on the right. Links and alt text are under <b>Settings</b>.</li>
+      <li>Use the device buttons in the toolbar to check how the page looks on a tablet or phone.</li>
+    </ol>
+    <h3>Save your work</h3>
+    <p>SiteCraft autosaves to this browser as you go. To keep a real file, use <b>File › Save</b>. In Chrome and Edge it saves straight to the file you choose; in other browsers it downloads a copy.</p>
+    <h3>Publish it</h3>
+    <p>The saved file is a complete web page. Rename it <code>index.html</code>, put it in a folder, and drop that folder onto <a href="https://app.netlify.com/drop" target="_blank" rel="noopener">Netlify Drop</a> to get a live web address.</p>`;
+  const aboutHtml = `
+    <p><b>SiteCraft</b> · version 0.2</p>
+    <p>A drag-and-drop website builder that runs in your browser.</p>
+    <p>Built on <a href="https://grapesjs.com" target="_blank" rel="noopener">GrapesJS</a> 0.21.13, an open-source web builder framework released under the BSD 3-Clause license.</p>`;
+
+  // =====================================================================
+  // Menu bar
+  // =====================================================================
+  const sel = () => !!editor.getSelected();
+  const menus = [
+    ['File', [
+      { label: 'New blank page', run: newBlank },
+      { label: 'New from starter template', run: newStarter },
+      '-',
+      { label: 'Open…', key: 'Ctrl+O', run: openFile },
+      '-',
+      { label: 'Save', key: 'Ctrl+S', run: () => save(false) },
+      { label: 'Save as…', key: 'Ctrl+Shift+S', run: () => save(true) },
+      { label: 'Copy page HTML', run: copyHtml },
+      '-',
+      { label: 'Clear page', run: clearPage },
+      { label: 'Close file', run: closeFile },
+    ]],
+    ['Edit', [
+      { label: 'Undo', key: 'Ctrl+Z', run: () => editor.UndoManager.undo(), disabled: () => !editor.UndoManager.hasUndo() },
+      { label: 'Redo', key: 'Ctrl+Shift+Z', run: () => editor.UndoManager.redo(), disabled: () => !editor.UndoManager.hasRedo() },
+      '-',
+      { label: 'Copy element', key: 'Ctrl+C', run: () => editor.runCommand('core:copy'), disabled: () => !sel() },
+      { label: 'Paste element', key: 'Ctrl+V', run: () => editor.runCommand('core:paste'), disabled: () => !sel() },
+      { label: 'Duplicate element', run: () => editor.runCommand('tlb-clone'), disabled: () => !sel() },
+      { label: 'Delete element', key: 'Del', run: () => editor.runCommand('core:component-delete'), disabled: () => !sel() },
+      '-',
+      { label: 'Select parent', key: 'A', run: () => editor.runCommand('core:component-exit'), disabled: () => !sel() },
+      { label: 'Deselect', run: () => editor.select(null), disabled: () => !sel() },
+    ]],
+    ['View', [
+      { heading: 'Preview size' },
+      { label: 'Desktop', run: () => setDevice('Desktop'), checked: () => editor.getDevice() === 'Desktop' },
+      { label: 'Tablet', run: () => setDevice('Tablet'), checked: () => editor.getDevice() === 'Tablet' },
+      { label: 'Phone', run: () => setDevice('Mobile'), checked: () => editor.getDevice() === 'Mobile' },
+      '-',
+      { label: 'Element outlines', run: () => outlineBtn.click(), checked: () => outlineBtn.getAttribute('aria-pressed') === 'true' },
+      { label: 'Preview', run: togglePreview, checked: isPreviewing },
+      { label: 'View code', run: toggleCode },
+      '-',
+      { heading: 'Panels' },
+      { label: 'Blocks', run: () => showTab('tab-blocks') },
+      { label: 'Layers', run: () => showTab('tab-layers') },
+      { label: 'Style', run: () => showTab('tab-style') },
+      { label: 'Settings', run: () => showTab('tab-settings') },
+      '-',
+      { heading: 'Interface theme' },
+      { label: 'Match system', run: () => setTheme('system'), checked: () => getTheme() === 'system' },
+      { label: 'Light', run: () => setTheme('light'), checked: () => getTheme() === 'light' },
+      { label: 'Dark', run: () => setTheme('dark'), checked: () => getTheme() === 'dark' },
+    ]],
+    ['Help', [
+      { label: 'Getting started', run: () => helpModal('Getting started', startHtml) },
+      { label: 'Keyboard shortcuts', run: () => helpModal('Keyboard shortcuts', shortcutsHtml) },
+      { label: 'GrapesJS documentation', run: () => window.open('https://grapesjs.com/docs/', '_blank', 'noopener') },
+      '-',
+      { label: 'About SiteCraft', run: () => helpModal('About SiteCraft', aboutHtml) },
+    ]],
+  ];
+
+  const menubar = document.getElementById('menubar');
+  let openMenu = null;
+
+  function closeMenus() {
+    if (!openMenu) return;
+    openMenu.btn.setAttribute('aria-expanded', 'false');
+    openMenu.list.remove();
+    openMenu = null;
+  }
+  function buildList(items) {
+    const list = document.createElement('div');
+    list.className = 'menu-list'; list.setAttribute('role', 'menu');
+    items.forEach((it) => {
+      if (it === '-') { const s = document.createElement('div'); s.className = 'menu-sep'; s.setAttribute('role', 'separator'); list.append(s); return; }
+      if (it.heading) { const h = document.createElement('div'); h.className = 'menu-heading'; h.textContent = it.heading; list.append(h); return; }
+      const b = document.createElement('button');
+      const isCheck = !!it.checked, on = isCheck && it.checked();
+      b.className = 'menu-item';
+      b.setAttribute('role', isCheck ? 'menuitemcheckbox' : 'menuitem');
+      if (isCheck) b.setAttribute('aria-checked', on);
+      b.disabled = !!(it.disabled && it.disabled());
+      b.innerHTML = `<span class="menu-check">${on ? '✓' : ''}</span><span></span><span class="menu-key">${it.key || ''}</span>`;
+      b.children[1].textContent = it.label;
+      b.onclick = () => { closeMenus(); it.run(); };
+      list.append(b);
+    });
+    list.addEventListener('keydown', (e) => {
+      const btns = [...list.querySelectorAll('.menu-item:not(:disabled)')];
+      const i = btns.indexOf(document.activeElement);
+      if (e.key === 'ArrowDown') { e.preventDefault(); btns[(i + 1) % btns.length].focus(); }
+      if (e.key === 'ArrowUp') { e.preventDefault(); btns[(i - 1 + btns.length) % btns.length].focus(); }
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); stepMenu(e.key === 'ArrowRight' ? 1 : -1, true); }
+    });
+    return list;
+  }
+  function showMenu(wrap, btn, items, focusFirst) {
+    closeMenus();
+    const list = buildList(items);
+    wrap.append(list);
+    btn.setAttribute('aria-expanded', 'true');
+    openMenu = { btn, list, wrap, items };
+    const r = list.getBoundingClientRect();
+    if (r.right > window.innerWidth - 8) { list.style.left = 'auto'; list.style.right = '0'; }
+    if (focusFirst) list.querySelector('.menu-item:not(:disabled)')?.focus();
+  }
+  const menuWraps = [];
+  function stepMenu(dir, focusFirst) {
+    const i = menuWraps.findIndex((m) => m.btn === openMenu?.btn);
+    const next = menuWraps[(i + dir + menuWraps.length) % menuWraps.length];
+    showMenu(next.wrap, next.btn, next.items, focusFirst);
+    next.btn.focus();
+    if (focusFirst) openMenu.list.querySelector('.menu-item:not(:disabled)')?.focus();
+  }
+  menus.forEach(([name, items]) => {
+    const wrap = document.createElement('div'); wrap.className = 'menu';
+    const btn = document.createElement('button');
+    btn.className = 'menu-btn'; btn.textContent = name;
+    btn.setAttribute('aria-haspopup', 'menu'); btn.setAttribute('aria-expanded', 'false');
+    btn.onclick = () => (openMenu && openMenu.btn === btn) ? closeMenus() : showMenu(wrap, btn, items, false);
+    btn.onmouseenter = () => { if (openMenu && openMenu.btn !== btn) showMenu(wrap, btn, items, false); };
+    btn.onkeydown = (e) => {
+      if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showMenu(wrap, btn, items, true); }
+    };
+    wrap.append(btn); menubar.append(wrap);
+    menuWraps.push({ wrap, btn, items });
+  });
+  document.addEventListener('mousedown', (e) => { if (openMenu && !openMenu.wrap.contains(e.target)) closeMenus(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && openMenu) { const b = openMenu.btn; closeMenus(); b.focus(); } });
+  editor.on('canvas:frame:load', () => {
+    editor.Canvas.getDocument()?.addEventListener('mousedown', closeMenus);
+  });
+  window.addEventListener('blur', closeMenus);
+
+  // File shortcuts work in the editor and inside the page canvas.
+  const km = editor.Keymaps;
+  km.add('sc:open', '⌘+o, ctrl+o', () => openFile(), { prevent: true });
+  km.add('sc:save', '⌘+s, ctrl+s', () => save(false), { prevent: true });
+  km.add('sc:save-as', '⌘+shift+s, ctrl+shift+s', () => save(true), { prevent: true });
+
+  window.addEventListener('beforeunload', (e) => { if (dirty && !inFrame) { e.preventDefault(); e.returnValue = ''; } });
+
+  // ---- Status + toast ----
+  const status = document.getElementById('status');
+  if (!storage) status.textContent = 'Saving is off in this browser';
+  editor.on('storage:end:store', () => {
+    const t = new Date();
+    status.textContent = 'Autosaved ' + t.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  });
+  const toastEl = document.getElementById('toast'); let toastT;
+  function toast(msg) {
+    toastEl.textContent = msg; toastEl.hidden = false;
+    clearTimeout(toastT); toastT = setTimeout(() => toastEl.hidden = true, 2800);
+  }
+})();
+</script>
