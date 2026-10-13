@@ -14,6 +14,8 @@ root = pathlib.Path(__file__).parent
 src = (root / "sitecraft.src.html").read_text(encoding="utf-8")
 css = (root / "grapes.css").read_text(encoding="utf-8")
 page = src.replace("/*GRAPES_CSS*/", css)
+# sitecraft.src.html links grapes.css so it also works when opened directly; the builds inline it.
+page = page.replace('<link rel="stylesheet" href="grapes.css" data-src-only>\n', "")
 
 CDN = '<script src="https://unpkg.com/grapesjs@0.21.13/dist/grapes.min.js"></script>'
 LOCAL = '<script src="grapes.min.js"></script>'
