@@ -70,6 +70,8 @@ Ribbon buttons reuse the apps' own menu commands (looked up by label), so a butt
 
 ## Decisions
 
+- **Shapes, text boxes and shadows (same features in every Craft app that places objects):** box, circle/oval, triangle, diamond, pentagon, hexagon, octagon, star and arrow (plus lines), with corners from sharp to round (`shapePath`: 100% rounds each corner to half the shortest side), words inside, text boxes with wrapping, border, background, corners and padding, a drop shadow and opacity. Each app has its own copy of the shape geometry.
+
 - The **SiteCraft logo** (top left) is the one button for all the classic menus (F10). Undo/redo, screen size, Preview, Code and Copy HTML sit on the right of the tab row.
 - **Each ribbon tab has its own color**, and contextual tabs (Table) appear only when they apply.
 - **The File tab opens a Backstage start page** with live template thumbnails (sandboxed iframes scaled down).

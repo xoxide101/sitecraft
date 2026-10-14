@@ -221,8 +221,62 @@
         mk('div', { className: 'qs-meta', textContent: `<${tag}>` + (attrs.id ? `  #${attrs.id}` : '') + (attrs.href ? `  → ${attrs.href}` : '') }),
         classes),
       actionsFor(kind, c),
+      SC.isShape && SC.isShape(c) ? shapeFor(c) : null,
+      kind === 'page' || (SC.isShape && SC.isShape(c)) ? null : boxFor(c),
       kind === 'page' ? null : opacityFor(c),
+      kind === 'page' ? null : shadowFor(c),
       looksFor(kind, c)));
+  }
+  // Small form pieces for the panels below.
+  const row = (...kids) => mk('div', { style: 'display:grid;grid-template-columns:1fr 1fr;gap:6px;align-items:end' }, ...kids);
+  const lab = (text, input) => mk('label', { style: 'display:grid;gap:3px;font-size:12px;color:var(--muted)' }, mk('span', {}, text), input);
+  const colorIn = (value, on) => { const i = mk('input', { type: 'color', value: /^#[0-9a-f]{6}$/i.test(value || '') ? value : '#ffffff', style: 'width:100%;height:28px' }); i.addEventListener('change', () => on(i.value)); return i; };
+  const numIn = (value, on, step = 1) => { const i = mk('input', { type: 'number', value: String(value), step: String(step), min: '0', className: 'qs-add', style: 'width:100%' }); i.addEventListener('change', () => on(+i.value || 0)); return i; };
+  const rangeIn = (value, max, on, fmt) => { const v = mk('b', { textContent: fmt(value) }); const r = mk('input', { type: 'range', min: '0', max: String(max), step: '1', value: String(value), style: 'width:100%' }); r.addEventListener('input', () => { v.textContent = fmt(+r.value); on(+r.value); }); return [v, r]; };
+  // Shapes: which shape, corners, fill and outline (the words inside are edited like any text).
+  function shapeFor(c) {
+    const s = SC.readShape(c), set = (patch) => { SC.setShape(c, patch); render(); };
+    const type = mk('select', { className: 'qs-add', style: 'width:100%' }, ...SC.SHAPES.filter(([t]) => t !== 'line').map(([v, n]) => mk('option', { value: v, textContent: n, selected: v === s.type })));
+    type.addEventListener('change', () => set({ type: type.value }));
+    const [rv, rr] = rangeIn(s.round, 100, (v) => SC.setShape(c, { round: v }), (v) => (v ? v + '%' : 'sharp'));
+    const noFill = mk('input', { type: 'checkbox', checked: !s.fill }); noFill.addEventListener('change', () => set({ fill: noFill.checked ? '' : '#f5c518' }));
+    return mk('div', {}, mk('h4', { textContent: 'Shape' }),
+      lab('Shape', type),
+      s.type === 'ellipse' ? null : mk('label', { style: 'display:grid;gap:3px;font-size:12px;color:var(--muted)' }, mk('span', {}, 'Corners, sharp to round: ', rv), rr),
+      s.type === 'star' ? lab('Star points', numIn(s.points, (v) => set({ points: Math.max(3, Math.min(24, v)) }))) : null,
+      row(lab('Fill', colorIn(s.fill, (v) => set({ fill: v }))), mk('label', { style: 'font-size:12px' }, noFill, ' No fill')),
+      row(lab('Outline', colorIn(s.stroke, (v) => set({ stroke: v }))), lab('Outline width (px)', numIn(s.sw, (v) => set({ sw: v })))),
+      mk('p', { style: 'font-size:11.5px;color:var(--muted);margin:4px 0 0', textContent: 'Double-click the shape to type the words inside; format them with the text bar.' }));
+  }
+  // Box look for any element (a text box is a box with words): background, border, corners and padding.
+  function boxFor(c) {
+    const st = c.getStyle() || {}, el = c.getEl(), size = el ? Math.min(el.offsetWidth, el.offsetHeight) : 100;
+    const bw = parseFloat(st['border-width'] || (st.border || '').split(' ')[0]) || 0;
+    const bc = st['border-color'] || ((st.border || '').match(/#[0-9a-f]{6}/i) || [])[0] || '#555555';
+    const bs = st['border-style'] || ((st.border || '').match(/dashed|dotted/) || ['solid'])[0];
+    const radius = parseFloat(st['border-radius']) || 0, pct = Math.min(100, Math.round((radius / Math.max(1, size / 2)) * 100));
+    const border = (w, col, style) => { c.removeStyle('border'); if (w) c.addStyle({ 'border-width': w + 'px', 'border-style': style, 'border-color': col }); else { c.removeStyle('border-width'); c.removeStyle('border-style'); c.removeStyle('border-color'); } };
+    const [rv, rr] = rangeIn(pct, 100, (v) => { if (v) c.addStyle({ 'border-radius': Math.round((v / 100) * (size / 2)) + 'px' }); else c.removeStyle('border-radius'); }, (v) => (v ? v + '%' : 'sharp'));
+    const noBg = mk('input', { type: 'checkbox', checked: !st['background-color'] }); noBg.addEventListener('change', () => { if (noBg.checked) c.removeStyle('background-color'); else c.addStyle({ 'background-color': '#ffffff' }); render(); });
+    const style = mk('select', { className: 'qs-add', style: 'width:100%' }, ...[['solid', 'Solid'], ['dashed', 'Dashed'], ['dotted', 'Dotted']].map(([v, n]) => mk('option', { value: v, textContent: n, selected: v === bs })));
+    style.addEventListener('change', () => border(bw || 1, bc, style.value));
+    return mk('div', {}, mk('h4', { textContent: 'Box look' }),
+      row(lab('Background', colorIn(st['background-color'], (v) => { c.addStyle({ 'background-color': v }); render(); })), mk('label', { style: 'font-size:12px' }, noBg, ' None')),
+      row(lab('Border width (px)', numIn(bw, (v) => { border(v, bc, bs); render(); })), lab('Border colour', colorIn(bc, (v) => { border(bw || 1, v, bs); render(); }))),
+      row(lab('Border style', style), lab('Padding (px)', numIn(parseFloat(st.padding) || 0, (v) => { if (v) c.addStyle({ padding: v + 'px' }); else c.removeStyle('padding'); }))),
+      mk('label', { style: 'display:grid;gap:3px;font-size:12px;color:var(--muted)' }, mk('span', {}, 'Corners, sharp to round: ', rv), rr));
+  }
+  // Drop shadow for any element: it follows the shape, the box or the letters.
+  function shadowFor(c) {
+    const f = (c.getStyle() || {}).filter || '', m = f.match(/drop-shadow\(([\d.]+)px ([\d.]+)px ([\d.]+)px/);
+    const on = mk('input', { type: 'checkbox', checked: !!m });
+    let dist = m ? +m[1] : 4, blur = m ? +m[3] : 6;
+    const apply = () => { if (on.checked) c.addStyle({ filter: `drop-shadow(${dist}px ${dist}px ${blur}px rgba(0,0,0,0.35))` }); else c.removeStyle('filter'); };
+    on.addEventListener('change', () => { apply(); render(); });
+    const [bv, br] = rangeIn(blur, 30, (v) => { blur = v; apply(); }, (v) => v + 'px');
+    const [dv, dr] = rangeIn(dist, 20, (v) => { dist = v; apply(); }, (v) => v + 'px');
+    return mk('div', {}, mk('h4', { textContent: 'Drop shadow' }), mk('label', { style: 'font-size:12px' }, on, ' Drop shadow'),
+      m ? row(mk('label', { style: 'display:grid;gap:3px;font-size:12px;color:var(--muted)' }, mk('span', {}, 'Softness: ', bv), br), mk('label', { style: 'display:grid;gap:3px;font-size:12px;color:var(--muted)' }, mk('span', {}, 'Distance: ', dv), dr)) : null);
   }
   // Opacity: how solid the object is; lower lets what is behind it show through (for overlapping layouts).
   function opacityFor(c) {

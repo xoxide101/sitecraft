@@ -10,6 +10,17 @@
 
   // ---- Icons (24 × 24, drawn with the tab's color; .fill parts are tinted) ----
   const I = {
+    textbox: '<rect x="3" y="4" width="18" height="16" rx="1.5" class="fill"/><path d="M7 9h10M7 12.5h10M7 16h6"/>',
+    sh_rect: '<path d="M0 0L18 0L18 16L0 16Z" transform="translate(3 4)" class="fill"/>',
+    sh_rounded: '<path d="M0 2.4Q0 0 2.4 0L15.6 0Q18 0 18 2.4L18 13.6Q18 16 15.6 16L2.4 16Q0 16 0 13.6Z" transform="translate(3 4)" class="fill"/>',
+    sh_ellipse: '<path d="M0 8A9 8 0 1 0 18 8A9 8 0 1 0 0 8Z" transform="translate(3 4)" class="fill"/>',
+    sh_triangle: '<path d="M9 0L18 16L0 16Z" transform="translate(3 4)" class="fill"/>',
+    sh_diamond: '<path d="M9 0L18 8L9 16L0 8Z" transform="translate(3 4)" class="fill"/>',
+    sh_pentagon: '<path d="M9 0L17.56 5.53L14.29 14.47L3.71 14.47L0.44 5.53Z" transform="translate(3 4)" class="fill"/>',
+    sh_hexagon: '<path d="M18 8L13.5 14.93L4.5 14.93L0 8L4.5 1.07L13.5 1.07Z" transform="translate(3 4)" class="fill"/>',
+    sh_octagon: '<path d="M12.44 0.61L17.31 4.94L17.31 11.06L12.44 15.39L5.56 15.39L0.69 11.06L0.69 4.94L5.56 0.61Z" transform="translate(3 4)" class="fill"/>',
+    sh_star: '<path d="M9 0L11.38 5.09L17.56 5.53L12.85 9.11L14.29 14.47L9 11.6L3.71 14.47L5.15 9.11L0.44 5.53L6.62 5.09Z" transform="translate(3 4)" class="fill"/>',
+    sh_arrow: '<path d="M0 4.8L10.8 4.8L10.8 0L18 8L10.8 16L10.8 11.2L0 11.2Z" transform="translate(3 4)" class="fill"/>',
     page: '<path d="M6 3h8l4 4v14H6Z" class="fill"/><path d="M14 3v4h4M9 12h6M9 16h6"/>',
     table: '<rect x="3" y="4" width="18" height="16" rx="2" class="fill"/><path d="M3 9h18M3 14h18M9 4v16M15 4v16"/>',
     draw: '<rect x="3" y="4" width="14" height="12" rx="1.5" stroke-dasharray="3 2"/><path d="m14 21 7-7-2-2-7 7-1 3Z" class="fill"/>',
@@ -166,6 +177,7 @@
       ['Pictures and media', [big('picture', 'Picture', 'picture', 'A picture from this computer'), col(small('picture-url', 'Online picture', 'web', 'A picture from a web address'), small('video', 'Video', 'video', 'A video (YouTube, Vimeo or a file)'), small('map', 'Map', 'map', 'A Google map'))]],
       ['Elements', [big('html-element', 'HTML element', 'tag', 'Any HTML element, from a searchable list'), col(small('ins-section', 'Section', 'section'), small('ins-cols2', '2 columns', 'cols2'), small('ins-cols3', '3 columns', 'cols3')), col(small('ins-button', 'Button', 'button'), small('ins-divider', 'Divider line', 'divider'), small('ins-details', 'Collapsible', 'details'))]],
       ['Text', [col(small('ins-heading', 'Heading', 'heading'), small('ins-paragraph', 'Paragraph', 'para'), small('ins-quote', 'Quote', 'quote')), col(small('ins-bullets', 'Bulleted list', 'bullets'), small('ins-numbers', 'Numbered list', 'numbers'), small('ins-code', 'Code block', 'code')), col(small('toc', 'Contents list', 'toc', 'A table of contents from your headings'), small('symbol', 'Symbol', 'symbol', 'Symbols and emoji'))]],
+      ['Shapes', [big('ins-textbox', 'Text box', 'textbox', 'Words in a box that wrap, with a border, background, corners, padding and shadow'), col(small('ins-shape-rect', 'Box', 'sh_rect', 'Box with words inside; corners from sharp to round in Quick styles'), small('ins-shape-rounded', 'Rounded box', 'sh_rounded', 'Rounded box with words inside; corners from sharp to round in Quick styles'), small('ins-shape-ellipse', 'Circle', 'sh_ellipse', 'Circle with words inside; corners from sharp to round in Quick styles')), col(small('ins-shape-triangle', 'Triangle', 'sh_triangle', 'Triangle with words inside; corners from sharp to round in Quick styles'), small('ins-shape-diamond', 'Diamond', 'sh_diamond', 'Diamond with words inside; corners from sharp to round in Quick styles'), small('ins-shape-pentagon', 'Pentagon', 'sh_pentagon', 'Pentagon with words inside; corners from sharp to round in Quick styles')), col(small('ins-shape-hexagon', 'Hexagon', 'sh_hexagon', 'Hexagon with words inside; corners from sharp to round in Quick styles'), small('ins-shape-octagon', 'Octagon', 'sh_octagon', 'Octagon with words inside; corners from sharp to round in Quick styles'), small('ins-shape-star', 'Star', 'sh_star', 'Star with words inside; corners from sharp to round in Quick styles')), col(small('ins-shape-arrow', 'Arrow', 'sh_arrow', 'Arrow with words inside; corners from sharp to round in Quick styles'))]],
       ['Links', [col(small('link', 'Link', 'link', 'Link the selected words (Ctrl+K)'), small('bookmark', 'Bookmark', 'bookmark', 'Name a place on the page to link to'))]],
       ['Interactive', [big('hotspots', 'Picture hotspots', 'hotspot', 'Draw areas on a picture that react to hovering and clicking'), big('widgets', 'Widgets', 'widget', 'Sliders, tabs, pop-ups, countdowns and more'), big('embed', 'Embed', 'embed', 'Show another web page inside this one')]],
     ] },
