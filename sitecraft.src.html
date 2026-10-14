@@ -1768,8 +1768,14 @@ h2{font-size:32px;margin:0 0 24px}
   }
   const SYMBOLS = '© ® ™ § ¶ † ‡ • · … — – ‘ ’ “ ” « » ‹ › ° ± × ÷ ≈ ≠ ≤ ≥ ∞ √ ∑ π µ Ω ½ ⅓ ¼ ¾ ² ³ € £ ¥ ¢ ₹ ₩ ← → ↑ ↓ ↔ ⇒ ✓ ✔ ✗ ✘ ★ ☆ ♥ ♦ ♣ ♠ ☎ ✉ ☀ ☁ ☂ ❄ ♪ ♫ ☺ 😀 😂 😍 👍 👏 🙏 🎉 🔥 ❤️ ⭐ ✅ ❌ 📞 📧 📍 🕒 🍞 ☕'.split(' ');
   function symbolPop(btn = fbBtn('symbol')) {
-    const put = (s) => { if (!editing()) { closePop(); toast('Double-click into the text where the symbol should go.'); return; } exec('insertText', s); };
-    popover(btn, mk('h4', { textContent: 'Symbols and emoji' }), mk('div', { className: 'symbols' }, SYMBOLS.map((s) => mk('button', { textContent: s, title: s, onclick: () => put(s) }))));
+    // Symbols, emoji and the dingbat groups. In text it types the symbol; otherwise it adds it as a big symbol of its own.
+    const put = (s) => { if (!editing()) { closePop(); insertBlock(`<p style="font-size:64px;line-height:1.1;text-align:center;margin:12px 0">${s}</p>`); return; } exec('insertText', s); };
+    const groups = [['Symbols and emoji', SYMBOLS], ...((window.SC && SC.DINGBATS) || [])];
+    const grid = mk('div', { className: 'symbols' });
+    const draw = (i) => { grid.textContent = ''; groups[i][1].forEach((s) => grid.append(mk('button', { textContent: s, title: s, onclick: () => put(s) }))); };
+    const pick = mk('select', { onchange: () => draw(+pick.value), style: 'width:100%;margin-bottom:6px' }, ...groups.map(([n], i) => mk('option', { value: i, textContent: n })));
+    draw(0);
+    popover(btn, mk('h4', { textContent: 'Symbols and dingbats' }), pick, grid);
   }
   function tablePop(btn) {
     const label = mk('div', { className: 'tgrid-label', textContent: 'Insert a table' });

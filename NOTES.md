@@ -107,3 +107,5 @@ Ribbon buttons reuse the apps' own menu commands (looked up by label), so a butt
 **2026-10-14:** Shapes (`.sc-shape`, SVG background from `shapePath`), curved text (`svg.sc-curve` with textPath, model in `data-curve`), Box look, rotation, opacity and drop shadow in Quick styles.
 
 **2026-10-14:** Shapes can be 3-D in three colours (face = fill, side = `side`, edge = border) and have one border line or three (`lines`: outer, middle, inner; a middle line with no colour leaves a gap). `shapeLayers()` lists what to draw, back to front; it is the same code in each Craft app.
+
+**2026-10-14:** Dingbats (`DINGBATS`, `DINGBAT_FONT`) and colour fills for see-through pictures (`FILL_MODES`: original, solid, tint, gradient, picture). Pictures are recoloured with a CSS mask (`setImageFill`, model in `data-fx`, the picture pixels moved out of view with `object-position`); the Symbol picker includes the dingbat groups.

@@ -225,6 +225,7 @@
       SC.isCurve && SC.isCurve(c) ? curveFor(c) : null,
       kind === 'page' || (SC.isShape && SC.isShape(c)) || (SC.isCurve && SC.isCurve(c)) ? null : boxFor(c),
       kind === 'page' || (SC.isCurve && SC.isCurve(c)) ? null : rotateFor(c),
+      kind === 'image' ? imageFillFor(c) : null,
       kind === 'page' ? null : opacityFor(c),
       kind === 'page' ? null : shadowFor(c),
       looksFor(kind, c)));
@@ -300,6 +301,20 @@
         mk('button', { type: 'button', className: 'btn' + (m.bold ? ' primary' : ''), innerHTML: '<b>B</b>', title: 'Bold', onclick: () => set({ bold: !m.bold }) }),
         mk('button', { type: 'button', className: 'btn' + (m.italic ? ' primary' : ''), innerHTML: '<i>I</i>', title: 'Italic', onclick: () => set({ italic: !m.italic }) }))),
       slider('Letter spacing', 'spacing', -100, 600, (v) => String(v)));
+  }
+  // Colour fill for pictures with a see-through background: one colour, a tint, a gradient or a picture inside.
+  function imageFillFor(c) {
+    const f = SC.readFill(c) || { mode: 'original', c1: '#000000', c2: '#3f8be8', angle: 90, amount: 0.6 };
+    const apply = (patch) => { SC.setImageFill(c, { ...f, ...patch }); render(); };
+    const pickPic = (then) => { const i = mk('input', { type: 'file', accept: 'image/*' }); i.addEventListener('change', () => { const file = i.files[0]; if (!file) return; const r = new FileReader(); r.onload = () => then(r.result); r.readAsDataURL(file); }); i.click(); };
+    const modes = mk('div', { style: 'display:flex;flex-wrap:wrap;gap:4px' }, ...SC.FILL_MODES.map(([v, n]) => mk('button', { type: 'button', className: 'btn' + (f.mode === v ? ' primary' : ''), textContent: n, onclick: () => (v === 'picture' && !f.src ? pickPic((src) => apply({ mode: v, src })) : apply({ mode: v })) })));
+    const [av, ar] = rangeIn(f.angle ?? 90, 359, () => {}, (x) => x + '°'); ar.addEventListener('change', () => apply({ angle: +ar.value }));
+    const [sv, sr] = rangeIn(Math.round((f.amount ?? 0.6) * 100), 100, () => {}, (x) => x + '%'); sr.addEventListener('change', () => apply({ amount: +sr.value / 100 }));
+    return mk('div', {}, mk('h4', { textContent: 'Colour fill (icons and see-through pictures)' }), modes,
+      ['solid', 'tint', 'gradient'].includes(f.mode) ? row(lab(f.mode === 'gradient' ? 'From' : 'Colour', colorIn(f.c1, (v) => apply({ c1: v }))), f.mode === 'gradient' ? lab('To', colorIn(f.c2, (v) => apply({ c2: v }))) : mk('span')) : null,
+      f.mode === 'gradient' ? mk('label', { style: 'display:grid;gap:3px;font-size:12px;color:var(--muted)' }, mk('span', {}, 'Gradient angle: ', av), ar) : null,
+      f.mode === 'tint' ? mk('label', { style: 'display:grid;gap:3px;font-size:12px;color:var(--muted)' }, mk('span', {}, 'How strong: ', sv), sr) : null,
+      f.mode === 'picture' ? mk('button', { type: 'button', className: 'btn', textContent: 'Choose another fill picture…', onclick: () => pickPic((src) => apply({ src })) }) : null);
   }
   // Rotation for any element: an angle in degrees (CSS transform).
   function rotateFor(c) {

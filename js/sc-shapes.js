@@ -106,6 +106,57 @@
   SHAPES.filter(([t]) => t !== 'line').forEach(([t]) => { A['ins-shape-' + t] = () => SC.insertBlock(shapeHtml(t)); });
   A['ins-shape-rounded'] = () => SC.insertBlock(shapeHtml('rounded'));
   A['ins-textbox'] = () => SC.insertBlock('<div class="sc-textbox" style="border:1px solid #555555;border-radius:0;padding:16px;background-color:#ffffff;max-width:380px;margin:16px auto;line-height:1.5">Type here. Words wrap inside the box. Change its border, background, corners, padding and shadow in Quick styles.</div>');
+  // Dingbats: classic symbol characters in groups (the same set in every Craft app). They are text, so colour,
+  // size, shadow, outline, gradients and rotation all work on them. DINGBAT_FONT is a list of fonts that have them.
+  const DINGBAT_FONT = "'Segoe UI Symbol', 'Noto Sans Symbols 2', 'Noto Sans Symbols', 'Apple Symbols', 'DejaVu Sans', 'Arial Unicode MS', sans-serif";
+  const DINGBATS = [
+    ['Arrows', '← → ↑ ↓ ↔ ↕ ↖ ↗ ↘ ↙ ⇐ ⇒ ⇑ ⇓ ⇔ ➔ ➜ ➙ ➛ ➝ ➞ ➟ ➠ ➡ ➢ ➣ ➤ ➥ ➦ ➧ ➨ ➩ ➪ ➫ ➬ ➭ ➮ ➯ ➱ ➲ ➳ ➵ ➸ ➺ ➻ ➼ ➽ ➾ ↩ ↪ ↺ ↻ ⟲ ⟳'],
+    ['Checks and crosses', '✓ ✔ ✗ ✘ ☐ ☑ ☒ ✕ ✖ ✚ ✛ ✜ ✙ ✠ ✟ ✞ ✝'],
+    ['Stars and flowers', '★ ☆ ✦ ✧ ✩ ✪ ✫ ✬ ✭ ✮ ✯ ✰ ✱ ✲ ✳ ✴ ✵ ✶ ✷ ✸ ✹ ✺ ✻ ✼ ✽ ✾ ✿ ❀ ❁ ❂ ❃ ❄ ❅ ❆ ❇ ❈ ❉ ❊ ❋ ❖ ⁂ ※'],
+    ['Hands and faces', '☚ ☛ ☜ ☝ ☞ ☟ ✌ ✍ ☺ ☻ ☹ ☠'],
+    ['Shapes', '● ○ ◉ ◎ ◐ ◑ ◒ ◓ ■ □ ▪ ▫ ▬ ▭ ▮ ▯ ◆ ◇ ◈ ◊ ▲ △ ▼ ▽ ◀ ▶ ◢ ◣ ◤ ◥ ❍ ❏ ❐ ❑ ❒ ⬟ ⬢ ⬣ ⬤ ⬛ ⬜'],
+    ['Hearts and cards', '♥ ♡ ❤ ❥ ❦ ❧ ❣ ♠ ♣ ♦ ♤ ♧ ♢'],
+    ['Weather and nature', '☀ ☁ ☂ ☃ ☄ ☾ ☽ ❄ ⚡ ☘ ⚘ ☔ ☼ ☇ ☈'],
+    ['Office and signs', '✂ ✃ ✄ ✆ ✇ ✈ ✉ ✎ ✏ ✐ ✑ ✒ ☎ ☏ ⌚ ⌛ ⚑ ⚐ ⚠ ♻ ⚙ ⚖ ⚓ ☕ ♿ ⚕ ⚛ ☮ ☯ ☸ ⚜ ☢ ☣ ⌘ ⌨ ✉'],
+    ['Music and games', '♩ ♪ ♫ ♬ ♭ ♮ ♯ ⚀ ⚁ ⚂ ⚃ ⚄ ⚅ ♔ ♕ ♖ ♗ ♘ ♙ ♚ ♛ ♜ ♝ ♞ ♟'],
+    ['Ornaments and quotes', '❛ ❜ ❝ ❞ ❨ ❩ ❪ ❫ ❬ ❭ ❮ ❯ ❰ ❱ ❲ ❳ ❴ ❵ ❡ ❢ § ¶ † ‡ • ‣ ◦ ⁃ ⁌ ⁍ ☙ ❦ ⸙'],
+    ['Numbers', '① ② ③ ④ ⑤ ⑥ ⑦ ⑧ ⑨ ⑩ ❶ ❷ ❸ ❹ ❺ ❻ ❼ ❽ ❾ ❿ ➀ ➁ ➂ ➃ ➄ ➅ ➆ ➇ ➈ ➉ ➊ ➋ ➌ ➍ ➎ ➏ ➐ ➑ ➒ ➓'],
+  ].map(([name, chars]) => [name, chars.split(/\s+/).filter(Boolean)]);
+  // Colour fills for icons, pictures and text: the original, one solid colour (keeps transparency), a tint over the
+  // original, a two-colour gradient at an angle, or a picture inside the shape. Works on any picture with a see-through background.
+  const FILL_MODES = [['original', 'Original'], ['solid', 'One colour'], ['tint', 'Tint over it'], ['gradient', 'Gradient'], ['picture', 'Picture fill']];
+  function recolorCanvas(img, f, pattern) {
+    const c = document.createElement('canvas'); c.width = img.naturalWidth || img.width; c.height = img.naturalHeight || img.height;
+    const x = c.getContext('2d');
+    x.drawImage(img, 0, 0, c.width, c.height);
+    if (!f || f.mode === 'original') return c;
+    if (f.mode === 'tint') { x.globalCompositeOperation = 'source-atop'; x.globalAlpha = f.amount ?? 0.6; x.fillStyle = f.c1 || '#e8483f'; x.fillRect(0, 0, c.width, c.height); return c; }
+    x.globalCompositeOperation = 'source-in';
+    if (f.mode === 'gradient') {
+      const a = ((f.angle ?? 90) * Math.PI) / 180, cx = c.width / 2, cy = c.height / 2, r = Math.hypot(c.width, c.height) / 2;
+      const g = x.createLinearGradient(cx - Math.sin(a) * r, cy + Math.cos(a) * r, cx + Math.sin(a) * r, cy - Math.cos(a) * r);
+      g.addColorStop(0, f.c1 || '#e8483f'); g.addColorStop(1, f.c2 || '#3f8be8'); x.fillStyle = g;
+    } else if (f.mode === 'picture' && pattern) {
+      const k = Math.max(c.width / pattern.width, c.height / pattern.height);
+      x.drawImage(pattern, (c.width - pattern.width * k) / 2, (c.height - pattern.height * k) / 2, pattern.width * k, pattern.height * k); return c;
+    } else x.fillStyle = f.c1 || '#222222';
+    x.fillRect(0, 0, c.width, c.height);
+    return c;
+  }
+  const loadImg = (src) => new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src; });
+  // Colour fill for pictures with a see-through background (CSS mask: the picture file is unchanged).
+  function setImageFill(c, f) {
+    const src = c.getAttributes().src; if (!src) return;
+    ['background', 'mask', '-webkit-mask', 'object-position'].forEach((k) => c.removeStyle(k));
+    c.addAttributes({ 'data-fx': f.mode === 'original' ? '' : JSON.stringify(f) });
+    if (f.mode === 'original') return;
+    const a = f.angle ?? 90, alpha = Math.round((f.amount ?? 0.6) * 255).toString(16).padStart(2, '0'), mask = `url("${src}") center / 100% 100% no-repeat`;
+    const bg = f.mode === 'gradient' ? `linear-gradient(${a}deg, ${f.c1}, ${f.c2})` : f.mode === 'picture' && f.src ? `url("${f.src}") center / cover no-repeat`
+      : f.mode === 'tint' ? `linear-gradient(${f.c1}${alpha}, ${f.c1}${alpha}), url("${src}") center / 100% 100% no-repeat` : f.c1;
+    // The picture's own pixels are moved out of view; the fill shows through the picture's shape.
+    c.addStyle({ background: bg, '-webkit-mask': mask, mask, 'object-position': '-99999px -99999px' });
+  }
+  const readFill = (c) => { try { return JSON.parse(c.getAttributes()['data-fx'] || 'null'); } catch (e) { return null; } };
   // ---- Curved text: words along a circle (SVG textPath), the same idea as curved text in the other Craft apps.
   // Model in data-curve: { text, dir 'up' | 'down', r (px), rot (degrees), span (degrees, 0 = natural), font, size (px), bold, italic, color, spacing (1/1000 em) }.
   const CURVE_FONTS = ['Arial', 'Georgia', 'Times New Roman', 'Verdana', 'Trebuchet MS', 'Tahoma', 'Courier New', 'Impact', 'Comic Sans MS', 'Palatino Linotype', 'Segoe UI'];
@@ -144,5 +195,5 @@
   hook(SC.fdoc && SC.fdoc());
   SC.editor.on('canvas:frame:load', ({ window: w }) => hook(w && w.document));
   A['ins-curve'] = () => curveDialog({}, (r) => SC.insertBlock(curveHtml({ text: r.text, dir: r.dir, r: 120, rot: 0, span: 0, font: 'Arial', size: 28, bold: true, italic: false, color: '#c2185b', spacing: 80 })));
-  Object.assign(SC, { SHAPES, shapePath, isShape, readShape, setShape, defaultLines, CURVE_FONTS, isCurve, readCurve, setCurve, curveDialog });
+  Object.assign(SC, { DINGBATS, DINGBAT_FONT, FILL_MODES, setImageFill, readFill, SHAPES, shapePath, isShape, readShape, setShape, defaultLines, CURVE_FONTS, isCurve, readCurve, setCurve, curveDialog });
 })();
