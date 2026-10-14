@@ -196,6 +196,17 @@ This writes:
 
 Chrome or Edge (recent versions) for everything, including saving straight into files and folders. Firefox and Safari work too, but download files instead.
 
+## How this was made
+
+This app is **vibe coded**: its author designed and directed it in plain conversation, feature by feature, and an AI coding assistant (Claude, by Anthropic) wrote the code.
+
+It is a **genuine clean-room build**, not a decompiled or AI-rebuilt copy of anything:
+- Nothing was decompiled, disassembled or reverse-engineered, in whole or in part.
+- No code, artwork, fonts, icons or data files from any original program were used, and none were given to the AI to work from.
+- SiteCraft builds on the open-source GrapesJS editor and takes ideas from word processors and classic HTML editors; only publicly known features and general ideas guided the design. Every line of code and every picture here was made new.
+
+Open-source libraries it uses are listed with their licences in Credits.
+
 ## Credits
 
 - [GrapesJS](https://grapesjs.com/) 0.21.13 (BSD-3-Clause)
