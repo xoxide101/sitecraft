@@ -21,9 +21,9 @@ A website builder that feels like a familiar Windows word processor, so people c
 
 **Edit the source, then run `python build.py`.** The source file links `grapes.css` itself, so it also works when opened directly; the builds inline that CSS.
 
-## Title bar and ribbon (shared)
+## Title bar and ribbon (this app's own copy)
 
-All four Craft apps use the same `craft-titlebar.js` code: in SiteCraft and DataCraft as a file, pasted into the single-file apps (LabelCraft as its own `<script>`, ShiftCraft inside its main script, so the emailable copy keeps working). It provides:
+The title bar and ribbon code (`CraftTitlebar`, `CraftRibbon`, `CraftIcons`) started as one file shared by the Craft apps. **Each app now keeps its own copy and changes it on its own**: here it is js/craft-titlebar.js. Changes are not copied to the other apps, so the apps can be refined separately until it is clear how unified they should be. It provides:
 
 - **`CraftTitlebar`:**
   - logo button that opens every classic menu side by side (F10)
