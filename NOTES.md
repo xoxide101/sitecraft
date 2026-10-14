@@ -21,6 +21,16 @@ A website builder that feels like a familiar Windows word processor, so people c
 
 **Edit the source, then run `python build.py`.** The source file links `grapes.css` itself, so it also works when opened directly; the builds inline that CSS.
 
+## Title bar
+
+`js/craft-titlebar.js` is the shared `CraftTitlebar` component used by all the Craft apps (copied into each). `sc-ribbon.js` sets it up.
+
+- **Left:** the logo menu button and quick buttons (save, undo, redo, preview in browser, print).
+- **Middle:** the file name and save state.
+- **Search:** Alt+Q, also inside the page canvas. It finds every menu command **and every ribbon button**, with its tab and group.
+- **Info chips:** pages, screen size, HTML standard.
+- **Right:** theme and help.
+
 ## How the pieces talk
 
 - The main script builds the editor, then sets up `window.SC`: the editor, settings, helpers (`mk`, `dialog`, `toast`, `insertBlock`, …), `actions` (what every ribbon button runs), `refreshHooks`, `exportHooks` (head and body-end) and `importHooks`.

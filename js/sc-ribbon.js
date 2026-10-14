@@ -356,4 +356,48 @@
   });
   editor.on('canvas:frame:load', ({ window: w }) => w.document.addEventListener('mousedown', closeMega));
   window.addEventListener('blur', closeMega);
+
+  // =====================================================================
+  // Title bar at the very top (Office style): logo menu and quick buttons, file name and save state,
+  // command search (Alt+Q), and small info. The tab row below keeps only the tabs and page tools.
+  // =====================================================================
+  if (!window.CraftTitlebar) return;
+  [undo, redo].forEach((b) => { b.hidden = true; });
+  right.querySelector('.rb-qsep')?.remove();
+  document.head.append(mk('style', { textContent: '.app.no-topbar.has-ctb { grid-template-rows: auto auto 1fr auto; } .statusbar .docinfo, .statusbar .docinfo + .sb-sep { display: none !important; } .ctb .rb-logo { width: 32px; height: 32px; border-radius: 9px; box-shadow: 0 0 0 1.5px rgba(255,255,255,.55); } .ctb .rb-logo svg { width: 32px; height: 32px; } .rb-left { display: none; }' }));
+  const devSel = document.getElementById('device-sel');
+  const menuCommands = () => SC.menus.flatMap(([name, items]) => items.filter((it) => it && it !== '-' && !it.heading && it.run)
+    .map((it) => ({ label: typeof it.label === 'function' ? it.label() : it.label, path: name + ' menu', key: it.key, run: it.run, disabled: it.disabled })));
+  const ribbonCommands = () => [...ribbon.querySelectorAll('.rb-panel [data-act]')].map((b) => {
+    const panel = b.closest('.rb-panel'), group = b.closest('.rb-group');
+    const text = (b.textContent || '').trim();
+    const label = (text.length > 3 ? text : '') || b.getAttribute('aria-label') || (b.getAttribute('title') || '').replace(/\s*\(.*\)$/, '') || text;
+    const tab = (tabDefs.find((t) => t.id === panel.dataset.tab) || {}).label || '';
+    return label && A[b.dataset.act] ? { label, path: `${tab} tab › ${group ? group.getAttribute('aria-label') : ''}`, words: b.getAttribute('title') || '', run: () => { selectTab(panel.dataset.tab, true); A[b.dataset.act](b); } } : null;
+  });
+  const tb = window.CraftTitlebar({
+    appName: 'SiteCraft', storageKey: 'sitecraft', colors: ['#2f5bea', '#7b4fd6'],
+    mount: document.querySelector('.app'), toast,
+    leftEls: [menusBtn],
+    quick: [
+      { icon: 'save', title: 'Save', key: 'Ctrl+S', run: () => SC.save(false) },
+      { icon: 'undo', title: 'Undo', key: 'Ctrl+Z', run: () => editor.UndoManager.undo(), disabled: () => !editor.UndoManager.hasUndo() },
+      { icon: 'redo', title: 'Redo', key: 'Ctrl+Shift+Z', run: () => editor.UndoManager.redo(), disabled: () => !editor.UndoManager.hasRedo() },
+      { icon: 'preview', title: 'Preview in browser', run: () => A['preview-browser']() },
+      { icon: 'print', title: 'Print', key: 'Ctrl+P', run: SC.printPage },
+    ],
+    getTitle: () => SC.getDocName(),
+    getStatus: () => (document.getElementById('docname').classList.contains('dirty') ? { text: 'Unsaved changes', dirty: true } : { text: document.getElementById('status').textContent }),
+    getInfo: () => [
+      { text: `${editor.Pages.getAll().length} page${editor.Pages.getAll().length === 1 ? '' : 's'}`, title: 'Pages in this site (opens the Pages panel)', run: () => SC.showTab('tab-pages') },
+      { text: devSel.value === 'Desktop' ? 'Computer' : ((devSel.options[devSel.selectedIndex] || {}).text || '').replace(/\s\d+ × \d+$/, ''), title: 'Screen size being previewed', run: () => { devSel.focus(); try { devSel.showPicker(); } catch (e) {} } },
+      { text: (SC.DOCTYPES[SC.settings.doctype] || SC.DOCTYPES.html5).label.replace(/ \(.*\)/, ''), title: 'HTML standard (click to change)', run: () => A.compat() },
+    ],
+    rightEls: [theme],
+    onHelp: () => (SC.menus.find(([n]) => n === 'Help')[1].find((it) => it.label === 'Getting started') || {}).run?.(),
+    getCommands: () => [...menuCommands(), ...ribbonCommands()],
+  });
+  document.querySelector('.app').classList.add('has-ctb');
+  editor.on('canvas:frame:load', ({ window: w }) => tb.listenTo(w.document));
+  if (SC.fdoc()) tb.listenTo(SC.fdoc());
 })();
