@@ -201,3 +201,7 @@ Chrome or Edge (recent versions) for everything, including saving straight into 
 - [GrapesJS](https://grapesjs.com/) 0.21.13 (BSD-3-Clause)
 - Feature ideas from [Quill](https://github.com/slab/quill) (BSD-3-Clause), [Tiptap](https://github.com/ueberdosis/tiptap) (MIT), [Jodit](https://github.com/xdan/jodit) (MIT) and [WordCraft](https://github.com/storytold/wordcraft) (MIT / Apache-2.0). No code was copied; the features were written for SiteCraft.
 - Fonts: Bricolage Grotesque, IBM Plex Sans, IBM Plex Mono (SIL Open Font License)
+
+## Development notes
+
+How the app is built, the decisions behind it, and known pitfalls: see [NOTES.md](NOTES.md).
