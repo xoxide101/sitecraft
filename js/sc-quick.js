@@ -221,7 +221,22 @@
         mk('div', { className: 'qs-meta', textContent: `<${tag}>` + (attrs.id ? `  #${attrs.id}` : '') + (attrs.href ? `  → ${attrs.href}` : '') }),
         classes),
       actionsFor(kind, c),
+      kind === 'page' ? null : opacityFor(c),
       looksFor(kind, c)));
+  }
+  // Opacity: how solid the object is; lower lets what is behind it show through (for overlapping layouts).
+  function opacityFor(c) {
+    const cur = parseFloat((c.getStyle() || {}).opacity);
+    const pct = Number.isFinite(cur) ? Math.round(cur * 100) : 100;
+    const val = mk('b', { textContent: pct + '%' });
+    const range = mk('input', { type: 'range', min: '0', max: '100', step: '1', value: String(pct), 'aria-label': 'Opacity', style: 'width:100%' });
+    const apply = () => {
+      const v = +range.value; val.textContent = v + '%';
+      if (v >= 100) c.removeStyle('opacity'); else c.addStyle({ opacity: String(v / 100) });
+    };
+    range.addEventListener('input', apply);
+    return mk('div', {}, mk('h4', { textContent: 'Opacity' }),
+      mk('label', { className: 'qs-op', style: 'display:grid;gap:4px;font-size:12px;color:var(--muted)' }, mk('span', {}, 'How solid it is (lower to see through): ', val), range));
   }
   function actionsFor(kind, c) {
     const b = (label, fn, title) => mk('button', { className: 'btn', type: 'button', textContent: label, title: title || label, onclick: fn });
