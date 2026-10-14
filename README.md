@@ -95,6 +95,7 @@ Click any object to see what it is, its tag and classes (add or remove them), an
 
 **Hover a look to preview it on the page, and click to keep it.** Pick an accent color first to try every look in that color. Ctrl+Z undoes.
 
+- **Date and time** (Insert menu and the Text tab): 16 formats including stamps like `14 OCT 2026`, with words before and after. **Fixed** types it in once; **Update automatically** makes a field that always shows the current date or time: on the published site, each visitor sees today's date or the time.
 - **Every slider has a box beside it** to type the exact value (Enter or Tab to apply).
 
 ## Sites with several pages

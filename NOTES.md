@@ -113,3 +113,7 @@ Ribbon buttons reuse the apps' own menu commands (looked up by label), so a butt
 ## Sliders you can type into
 
 `js/range-type.js` (loaded last) adds a number box beside every `input[type=range]`, including ones built later (a MutationObserver watches the page). Typing fires the same `input` and `change` events as dragging, so panels need no changes. Wrap a slider in `[data-rt-skip]` to leave it alone. Each app has its own copy.
+
+## Date and time
+
+Dates: `js/sc-shapes.js` has `DATE_FORMATS`, `dateDialog` and the `ins-date` action. Dynamic dates are `<time data-widget="date" data-fmt="…">`; the `date` widget in `js/sc-features.js` adds a small script to pages that use it, which fills them in for each visitor (same formats, written in plain ES5).

@@ -168,6 +168,12 @@
     { id: 'year', name: 'Current year', desc: 'Shows this year, so a © notice never goes out of date.',
       html: () => `<p>© <span data-widget="year">${new Date().getFullYear()}</span> Your name</p>`, css: '',
       js: `document.querySelectorAll('[data-widget="year"]').forEach(function(y){y.textContent=new Date().getFullYear()});` },
+    { id: 'date', name: 'Date and time', desc: 'Today’s date or the time, always up to date for each visitor (or typed in once as fixed words).', ask: 'datetime', css: '',
+      js: `(function(){function p(n){return(n<10?'0':'')+n}function iso(d){return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())}function sm(d){return d.toLocaleDateString('en-US',{month:'short'}).toUpperCase()}function hm(d){return d.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}
+var F={short:function(d){return d.toLocaleDateString()},long:function(d){return d.toLocaleDateString(undefined,{weekday:'long',year:'numeric',month:'long',day:'numeric'})},mdy:function(d){return d.toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'})},mdyShort:function(d){return d.toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'})},
+dmy:function(d){return d.getDate()+' '+d.toLocaleDateString(undefined,{month:'long'})+' '+d.getFullYear()},iso:iso,monthYear:function(d){return d.toLocaleDateString(undefined,{year:'numeric',month:'long'})},weekday:function(d){return d.toLocaleDateString(undefined,{weekday:'long'})},year:function(d){return String(d.getFullYear())},
+time:hm,time24:function(d){return p(d.getHours())+':'+p(d.getMinutes())},timeSec:function(d){return d.toLocaleTimeString()},dateTime:function(d){return d.toLocaleDateString()+' '+hm(d)},stampDMY:function(d){return d.getDate()+' '+sm(d)+' '+d.getFullYear()},stampMDY:function(d){return sm(d)+' '+d.getDate()+' '+d.getFullYear()},stampFull:function(d){return iso(d)+' '+p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds())}};
+function run(){var d=new Date();document.querySelectorAll('[data-widget="date"]').forEach(function(t){var f=F[t.getAttribute('data-fmt')]||F.short;t.textContent=f(d);t.setAttribute('datetime',d.toISOString())})}run();setInterval(run,30000)})();` },
     { id: 'smooth', name: 'Smooth scrolling', desc: 'Links to parts of the page glide there instead of jumping.', apply: 'page',
       css: 'html{scroll-behavior:smooth}', js: '' },
   ];
@@ -194,6 +200,7 @@
       return;
     }
     const put = (arg) => { SC.insertBlock(w.html(arg) + widgetCss(w)); toast(`${w.name} added. Try it with Developer › Preview in browser.`); };
+    if (w.ask === 'datetime') { SC.actions['ins-date'](); return; }
     if (w.ask === 'date') {
       const d = mk('input', { type: 'text', value: `${new Date().getFullYear()}-12-31T00:00` });
       dialog({ title: 'Count down to', body: [field('Date and time (year-month-day T hour:minute)', d)], actions: [{ label: 'Cancel' }, { label: 'Insert', primary: true, run: () => {

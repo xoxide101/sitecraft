@@ -194,6 +194,86 @@
   const hook = (doc) => { if (doc && !doc.__scCurve) { doc.__scCurve = true; doc.addEventListener('dblclick', onDbl); } };
   hook(SC.fdoc && SC.fdoc());
   SC.editor.on('canvas:frame:load', ({ window: w }) => hook(w && w.document));
+  // Date and time (the same in every Craft app): Word-style formats and the Insert › Date and time dialog.
+  // Static = the words are typed in once. Dynamic = a field that shows the current date or time whenever it is
+  // opened, printed or exported. A stamp model is { fmt, before, after }.
+  const DATE_FORMATS = [
+    ['short', 'Short date', (d) => d.toLocaleDateString()],
+    ['long', 'Long date', (d) => d.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })],
+    ['mdy', 'Month day, year', (d) => d.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })],
+    ['mdyShort', 'Short month', (d) => d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })],
+    ['dmy', 'Day month year', (d) => `${d.getDate()} ${d.toLocaleDateString(undefined, { month: 'long' })} ${d.getFullYear()}`],
+    ['iso', 'Year-month-day', (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`],
+    ['monthYear', 'Month and year', (d) => d.toLocaleDateString(undefined, { year: 'numeric', month: 'long' })],
+    ['weekday', 'Day of the week', (d) => d.toLocaleDateString(undefined, { weekday: 'long' })],
+    ['year', 'Year', (d) => String(d.getFullYear())],
+    ['time', 'Time', (d) => d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })],
+    ['time24', 'Time (24-hour)', (d) => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`],
+    ['timeSec', 'Time with seconds', (d) => d.toLocaleTimeString()],
+    ['dateTime', 'Date and time', (d) => `${d.toLocaleDateString()} ${d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`],
+    ['stampDMY', 'Stamp: 14 OCT 2026', (d) => `${d.getDate()} ${d.toLocaleDateString('en-US', { month: 'short' }).toUpperCase()} ${d.getFullYear()}`],
+    ['stampMDY', 'Stamp: OCT 14 2026', (d) => `${d.toLocaleDateString('en-US', { month: 'short' }).toUpperCase()} ${d.getDate()} ${d.getFullYear()}`],
+    ['stampFull', 'Stamp: date and time', (d) => `${DATE_FORMATS[5][2](d)} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`],
+  ];
+  const dateText = (fmt, d = new Date()) => (DATE_FORMATS.find((f) => f[0] === fmt) || DATE_FORMATS[0])[2](d);
+  const stampText = (s, d = new Date()) => (s.before || '') + dateText(s.fmt, d) + (s.after || '');
+  // The dialog: pick a format, add words before or after, choose fixed text or a field that updates itself.
+  // Resolves to { fmt, before, after, dynamic, text } or null. `dynamicNote` explains what "updates" means in this app.
+  function dateDialog({ title = 'Date and time', fmt = 'long', before = '', after = '', dynamic = false, allowDynamic = true, dynamicNote = 'Shows the current date or time every time you open, print or export.' } = {}) {
+    return new Promise((res) => {
+      if (!document.getElementById('dt-style')) {
+        const st = document.createElement('style'); st.id = 'dt-style';
+        st.textContent = '.dt-bd{position:fixed;inset:0;background:rgba(0,0,0,.4);display:grid;place-items:center;z-index:100000}'
+          + '.dt-dlg{background:var(--panel,#fff);color:var(--fg,#222);border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.3);width:min(560px,94vw);max-height:90vh;overflow:auto;padding:18px 20px;font:14px/1.4 system-ui,"Segoe UI",sans-serif}'
+          + '.dt-dlg h2{margin:0 0 12px;font-size:17px}.dt-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}'
+          + '.dt-list{border:1px solid var(--line,#ccc);border-radius:8px;max-height:300px;overflow:auto;padding:4px}'
+          + '.dt-list button{display:block;width:100%;text-align:left;border:0;background:none;color:inherit;padding:5px 8px;border-radius:5px;cursor:pointer;font:inherit}'
+          + '.dt-list button:hover{background:var(--panel-2,#f1f1f1)}.dt-list button[aria-pressed=true]{background:var(--accent,#2f6fdd);color:#fff}'
+          + '.dt-dlg label{display:grid;gap:3px;font-size:12px;color:var(--muted,#666);margin-bottom:10px}'
+          + '.dt-dlg input[type=text]{height:30px;padding:0 8px;border:1px solid var(--line,#ccc);border-radius:6px;background:var(--panel,#fff);color:var(--fg,#222);font:inherit}'
+          + '.dt-dlg .dt-check{display:flex;gap:8px;align-items:flex-start;font-size:13px;color:inherit}.dt-prev{padding:10px;border:1px dashed var(--line,#ccc);border-radius:8px;font-size:15px;min-height:22px;word-break:break-word}'
+          + '.dt-acts{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}.dt-acts button{min-width:80px;height:32px;border-radius:7px;border:1px solid var(--line,#ccc);background:var(--panel-2,#f4f4f4);color:inherit;cursor:pointer;font:inherit}'
+          + '.dt-acts .dt-ok{background:var(--accent,#2f6fdd);border-color:var(--accent,#2f6fdd);color:#fff}@media(max-width:560px){.dt-grid{grid-template-columns:1fr}}';
+        document.head.append(st);
+      }
+      const now = new Date(), esc2 = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+      const bd = document.createElement('div'); bd.className = 'dt-bd';
+      bd.innerHTML = `<div class="dt-dlg" role="dialog" aria-modal="true" aria-label="${esc2(title)}"><h2>${esc2(title)}</h2><div class="dt-grid">
+        <div><div class="dt-list" role="listbox" aria-label="Format">${DATE_FORMATS.map(([k, n, f]) => `<button type="button" data-f="${k}" aria-pressed="${k === fmt}" title="${esc2(n)}">${esc2(f(now))}</button>`).join('')}</div></div>
+        <div><label>Words before<input type="text" data-b value="${esc2(before)}" placeholder="e.g. Printed on "></label><label>Words after<input type="text" data-a value="${esc2(after)}"></label>
+        ${allowDynamic ? `<label class="dt-check"><input type="checkbox" data-dyn ${dynamic ? 'checked' : ''}><span><b>Update automatically</b><br><small>${esc2(dynamicNote)} Leave it off to type it in as fixed text.</small></span></label>` : ''}
+        <label>Preview</label><div class="dt-prev" data-p></div></div></div>
+        <div class="dt-acts"><button type="button" data-x>Cancel</button><button type="button" class="dt-ok" data-ok>Insert</button></div></div>`;
+      document.body.append(bd);
+      let f = fmt;
+      const B = bd.querySelector('[data-b]'), A = bd.querySelector('[data-a]'), D = bd.querySelector('[data-dyn]');
+      const prev = () => { bd.querySelector('[data-p]').textContent = stampText({ fmt: f, before: B.value, after: A.value }) + (D && D.checked ? '  (updates itself)' : ''); };
+      bd.querySelectorAll('[data-f]').forEach((b) => { b.onclick = () => { f = b.dataset.f; bd.querySelectorAll('[data-f]').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); prev(); }; b.ondblclick = () => bd.querySelector('[data-ok]').click(); });
+      [B, A].forEach((i) => { i.oninput = prev; }); if (D) D.onchange = prev; prev();
+      const done = (v) => { bd.remove(); res(v); };
+      bd.querySelector('[data-x]').onclick = () => done(null);
+      bd.querySelector('[data-ok]').onclick = () => { const s = { fmt: f, before: B.value, after: A.value }; done({ ...s, dynamic: !!(D && D.checked), text: stampText(s) }); };
+      bd.addEventListener('keydown', (e) => { e.stopPropagation(); if (e.key === 'Escape') done(null); if (e.key === 'Enter' && e.target.tagName !== 'BUTTON') bd.querySelector('[data-ok]').click(); });
+      bd.onclick = (e) => { if (e.target === bd) done(null); };
+      const sel = bd.querySelector('[aria-pressed=true]') || bd.querySelector('[data-f]'); sel.focus(); sel.scrollIntoView({ block: 'nearest' });
+    });
+  }
+  // Insert › Date and time. Fixed words go in as text. "Update automatically" makes a <time data-widget="date"> that the
+  // published page fills in with the visitor's date or time (the script is added when a page uses it).
+  const timeHtml = (r) => `${escA(r.before || '')}<time data-widget="date" data-fmt="${r.fmt}" datetime="${new Date().toISOString()}">${escA(dateText(r.fmt))}</time>${escA(r.after || '')}`;
+  A['ins-date'] = async () => {
+    const ed = SC.editor, editing = ed.getEditing(), doc = SC.fdoc && SC.fdoc();
+    const sel = editing && doc ? doc.getSelection() : null, range = sel && sel.rangeCount ? sel.getRangeAt(0).cloneRange() : null;
+    const r = await dateDialog({ dynamicNote: 'On the published page it shows each visitor today’s date or the time.' });
+    if (!r) return;
+    const html = r.dynamic ? timeHtml(r) : escA(r.text);
+    if (editing && range) {
+      const s2 = doc.getSelection(); s2.removeAllRanges(); s2.addRange(range);
+      doc.execCommand('insertHTML', false, html);
+    } else SC.insertBlock(`<p>${html}</p>`);
+  };
+  // In the editor the date shows today's date too (refreshed when SiteCraft opens).
+  SC.editor.on('load', () => setTimeout(() => SC.editor.getWrapper().find('[data-widget="date"]').forEach((c) => { const t = dateText(c.getAttributes()['data-fmt']); if (c.getEl() && c.getEl().textContent !== t) c.components(t); }), 400));
   A['ins-curve'] = () => curveDialog({}, (r) => SC.insertBlock(curveHtml({ text: r.text, dir: r.dir, r: 120, rot: 0, span: 0, font: 'Arial', size: 28, bold: true, italic: false, color: '#c2185b', spacing: 80 })));
   Object.assign(SC, { DINGBATS, DINGBAT_FONT, FILL_MODES, setImageFill, readFill, SHAPES, shapePath, isShape, readShape, setShape, defaultLines, CURVE_FONTS, isCurve, readCurve, setCurve, curveDialog });
 })();
