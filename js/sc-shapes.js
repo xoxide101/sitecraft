@@ -42,32 +42,64 @@
   const shapeTextBox = (type) => ({ triangle: [0.5, 0.66, 0.55], diamond: [0.5, 0.5, 0.55], star: [0.5, 0.55, 0.42], arrow: [0.42, 0.5, 0.58], ellipse: [0.5, 0.5, 0.72], pentagon: [0.5, 0.56, 0.66], hexagon: [0.5, 0.5, 0.72], octagon: [0.5, 0.5, 0.75] }[type] || [0.5, 0.5, 1]);
 
   // The outline as an SVG picture that stretches to the element (the line width stays the same).
-  function shapeUrl(type, round, points, fill, stroke, sw) {
-    const m = sw ? 1.5 : 0, d = shapePath(type, 100 - 2 * m, 100 - 2 * m, round, points);
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="${d}" transform="translate(${m} ${m})" fill="${fill || 'none'}" stroke="${sw ? stroke || '#222222' : 'none'}" stroke-width="${sw}" vector-effect="non-scaling-stroke" stroke-linejoin="${round ? 'round' : 'miter'}"/></svg>`;
+  // Everything a shape draws, back to front: the 3-D sides, the face, and one border line or three (outer, middle, inner).
+  // Three colours for 3-D: face (fill), side (depth) and edge (border). `k` turns mm (or px) into drawing units.
+  // Returns [{ d, x, y, fill, stroke, sw, dash, face }]; the face size is the box less the 3-D depth.
+  function shapeLayers(s, W, H, k) {
+    const rnd = s.round || 0, pts = s.points || 5, depth = Math.max(0, (s.depth || 0) * k);
+    const FW = Math.max(1, W - depth), FH = Math.max(1, H - depth);
+    const at = (inset, x0, y0, fill, stroke, sw, dash, face) => ({ d: shapePath(s.type, Math.max(1, FW - 2 * inset), Math.max(1, FH - 2 * inset), rnd, pts), x: x0 + inset, y: y0 + inset, fill: fill || 'none', stroke: stroke || 'none', sw: sw || 0, dash: !!dash, face: !!face });
+    const out = [];
+    if (depth) {
+      const n = Math.max(3, Math.ceil(depth / (0.35 * k)));
+      for (let i = n; i >= 1; i--) out.push(at(0, (depth * i) / n, (depth * i) / n, s.side || '#6b6b6b', i === n && s.stroke ? s.stroke : null, i === n && s.stroke ? (s.sw || 0.4) * k : 0));
+    }
+    const L = s.lines;
+    if (L) {
+      out.push(at(0, 0, 0, s.fill, null, 0, false, true));
+      const o = ((L.outer && L.outer.w) || 0) * k, m = ((L.middle && L.middle.w) || 0) * k, i = ((L.inner && L.inner.w) || 0) * k;
+      if (o) out.push(at(o / 2, 0, 0, null, L.outer.color, o, s.dash));
+      if (m && L.middle.color) out.push(at(o + m / 2, 0, 0, null, L.middle.color, m, s.dash));
+      if (i) out.push(at(o + m + i / 2, 0, 0, null, L.inner.color, i, s.dash));
+    } else out.push(at(0, 0, 0, s.fill, s.stroke, s.stroke ? (s.sw || 0.4) * k : 0, s.dash, true));
+    return { layers: out, FW, FH };
+  }
+  const defaultLines = (base) => ({ outer: { color: base || '#222222', w: 1.2 }, middle: { color: '', w: 0.8 }, inner: { color: base || '#222222', w: 0.4 } });
+  // The outline as an SVG picture drawn at the element's size in pixels: 3-D sides, the face and one or three border lines.
+  function shapeUrl(s, W = 200, H = 200) {
+    const m = !s.lines && s.sw ? s.sw / 2 : 0;
+    const L = shapeLayers({ ...s, stroke: s.sw ? s.stroke || '#222222' : null }, W - 2 * m, H - 2 * m, 1);
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><g transform="translate(${m} ${m})">`
+      + L.layers.map((l) => `<path d="${l.d}" transform="translate(${l.x} ${l.y})" fill="${l.fill}" stroke="${l.stroke}" stroke-width="${l.sw}" stroke-linejoin="${s.round ? 'round' : 'miter'}"/>`).join('') + '</g></svg>';
     return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
   }
   // Read a shape's settings from its data- attributes and redraw it.
   function readShape(c) {
     const a = c.getAttributes();
-    return { type: a['data-shape'] || 'rect', round: +a['data-round'] || 0, points: +a['data-points'] || 5, fill: a['data-fill'] ?? '#f5c518', stroke: a['data-stroke'] || '#222222', sw: a['data-sw'] != null ? +a['data-sw'] : 2 };
+    let lines = null; try { lines = a['data-lines'] ? JSON.parse(a['data-lines']) : null; } catch (e) { lines = null; }
+    return { type: a['data-shape'] || 'rect', round: +a['data-round'] || 0, points: +a['data-points'] || 5, fill: a['data-fill'] ?? '#f5c518', stroke: a['data-stroke'] || '#222222', sw: a['data-sw'] != null ? +a['data-sw'] : 2,
+      depth: +a['data-depth'] || 0, side: a['data-side'] || '#6b6b6b', lines };
   }
-  function shapeStyle(s) {
-    const [, cy, tw] = shapeTextBox(s.type), side = ((1 - tw) / 2) * 100;
-    return { 'background-image': shapeUrl(s.type, s.round, s.points, s.fill, s.stroke, s.sw), 'background-size': '100% 100%', 'background-repeat': 'no-repeat',
-      'padding-left': side.toFixed(1) + '%', 'padding-right': side.toFixed(1) + '%', 'padding-top': (Math.max(0, cy - 0.5) * 60).toFixed(1) + '%' };
+  // Padding keeps the words inside the shape. It is in pixels from the shape's own size: percent padding would be
+  // measured from the parent's width and stretch narrow shapes.
+  function shapeStyle(s, W = 200, H = 200) {
+    const [, cy, tw] = shapeTextBox(s.type), depth = s.depth || 0, side = Math.round(((1 - tw) / 2) * (W - depth));
+    return { 'background-image': shapeUrl(s, W, H), 'background-size': '100% 100%', 'background-repeat': 'no-repeat',
+      'padding-left': side + 'px', 'padding-right': (side + depth) + 'px', 'padding-top': Math.round(Math.max(0, cy - 0.5) * 2 * (H - depth)) + 'px', 'padding-bottom': depth + 'px' };
   }
   function setShape(c, patch) {
     const s = { ...readShape(c), ...patch };
-    c.addAttributes({ 'data-shape': s.type, 'data-round': String(s.round), 'data-points': String(s.points), 'data-fill': s.fill || '', 'data-stroke': s.stroke, 'data-sw': String(s.sw) });
-    c.addStyle(shapeStyle(s));
+    c.addAttributes({ 'data-shape': s.type, 'data-round': String(s.round), 'data-points': String(s.points), 'data-fill': s.fill || '', 'data-stroke': s.stroke, 'data-sw': String(s.sw),
+      'data-depth': String(s.depth || 0), 'data-side': s.side || '#6b6b6b', 'data-lines': s.lines ? JSON.stringify(s.lines) : '' });
+    const el = c.getEl(), W = el ? el.offsetWidth : 200, H = el ? el.offsetHeight : 200;
+    c.addStyle(shapeStyle(s, W || 200, H || 200));
   }
   const isShape = (c) => !!c && c.getClasses().includes('sc-shape');
   function shapeHtml(type) {
     const s = { type, round: type === 'rounded' ? 30 : 0, points: 5, fill: '#f5c518', stroke: '#222222', sw: 2 };
     if (type === 'rounded') s.type = 'rect';
     const wide = ['rect', 'arrow'].includes(s.type);
-    const st = { width: wide ? '260px' : '200px', 'min-height': wide ? '140px' : '200px', display: 'flex', 'flex-direction': 'column', 'justify-content': 'center', 'text-align': 'center', 'box-sizing': 'border-box', margin: '16px auto', 'font-family': 'Arial, sans-serif', 'font-size': '18px', ...shapeStyle(s) };
+    const st = { width: wide ? '260px' : '200px', 'min-height': wide ? '140px' : '200px', display: 'flex', 'flex-direction': 'column', 'justify-content': 'center', 'text-align': 'center', 'box-sizing': 'border-box', margin: '16px auto', 'font-family': 'Arial, sans-serif', 'font-size': '18px', ...shapeStyle(s, wide ? 260 : 200, wide ? 140 : 200) };
     const css = Object.entries(st).map(([k, v]) => `${k}:${v}`).join(';').replace(/"/g, "'");
     return `<div class="sc-shape" data-shape="${s.type}" data-round="${s.round}" data-points="5" data-fill="${s.fill}" data-stroke="${s.stroke}" data-sw="${s.sw}" style="${css}">Your words</div>`;
   }
@@ -112,5 +144,5 @@
   hook(SC.fdoc && SC.fdoc());
   SC.editor.on('canvas:frame:load', ({ window: w }) => hook(w && w.document));
   A['ins-curve'] = () => curveDialog({}, (r) => SC.insertBlock(curveHtml({ text: r.text, dir: r.dir, r: 120, rot: 0, span: 0, font: 'Arial', size: 28, bold: true, italic: false, color: '#c2185b', spacing: 80 })));
-  Object.assign(SC, { SHAPES, shapePath, isShape, readShape, setShape, CURVE_FONTS, isCurve, readCurve, setCurve, curveDialog });
+  Object.assign(SC, { SHAPES, shapePath, isShape, readShape, setShape, defaultLines, CURVE_FONTS, isCurve, readCurve, setCurve, curveDialog });
 })();

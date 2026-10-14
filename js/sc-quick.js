@@ -248,6 +248,18 @@
       s.type === 'star' ? lab('Star points', numIn(s.points, (v) => set({ points: Math.max(3, Math.min(24, v)) }))) : null,
       row(lab('Fill', colorIn(s.fill, (v) => set({ fill: v }))), mk('label', { style: 'font-size:12px' }, noFill, ' No fill')),
       row(lab('Outline', colorIn(s.stroke, (v) => set({ stroke: v }))), lab('Outline width (px)', numIn(s.sw, (v) => set({ sw: v })))),
+      mk('h4', { textContent: 'Border lines' }),
+      mk('div', { style: 'display:flex;gap:6px' }, mk('button', { type: 'button', className: 'btn' + (s.lines ? '' : ' primary'), textContent: 'One line', onclick: () => set({ lines: null }) }),
+        mk('button', { type: 'button', className: 'btn' + (s.lines ? ' primary' : ''), textContent: 'Three lines', title: 'Outer, middle and inner lines, each with its own colour', onclick: () => set({ lines: { outer: { color: s.stroke, w: 6 }, middle: { color: '', w: 4 }, inner: { color: s.stroke, w: 2 } } }) })),
+      ...(s.lines ? ['outer', 'middle', 'inner'].map((k) => {
+        const L = s.lines, name = k[0].toUpperCase() + k.slice(1);
+        const setColor = (v) => set({ lines: { ...L, [k]: { ...L[k], color: v } } });
+        const setWidth = (v) => set({ lines: { ...L, [k]: { ...L[k], w: v, color: k === 'middle' && !L[k].color && v ? '#ffffff' : L[k].color } } });
+        return row(lab(name + ' line', colorIn(L[k].color, setColor)), lab('Width (px)' + (k === 'middle' ? ', 0 = gap' : ''), numIn(L[k].color || k !== 'middle' ? L[k].w : 0, setWidth)));
+      }) : []),
+      mk('h4', { textContent: '3-D (face, side and edge colours)' }),
+      (() => { const [v, r] = rangeIn(s.depth || 0, 40, () => {}, (x) => (x ? x + 'px' : 'flat')); r.addEventListener('change', () => set({ depth: +r.value })); return mk('label', { style: 'display:grid;gap:3px;font-size:12px;color:var(--muted)' }, mk('span', {}, '3-D depth: ', v), r); })(),
+      s.depth ? lab('Side colour (face = fill, edge = outline)', colorIn(s.side, (v) => set({ side: v }))) : null,
       mk('p', { style: 'font-size:11.5px;color:var(--muted);margin:4px 0 0', textContent: 'Double-click the shape to type the words inside; format them with the text bar.' }));
   }
   // Box look for any element (a text box is a box with words): background, border, corners and padding.
