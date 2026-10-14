@@ -1,5 +1,6 @@
 <meta charset="utf-8">
 <title>SiteCraft</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2040%2040%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22sc-logo-g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%232f5bea%22%2F%3E%3Cstop%20offset%3D%22.55%22%20stop-color%3D%22%237b4fd6%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23d1408a%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20x%3D%221%22%20y%3D%221%22%20width%3D%2238%22%20height%3D%2238%22%20rx%3D%2211%22%20fill%3D%22url%28%23sc-logo-g%29%22%2F%3E%3Crect%20x%3D%228%22%20y%3D%2210%22%20width%3D%2224%22%20height%3D%2219%22%20rx%3D%223.5%22%20fill%3D%22none%22%20stroke%3D%22%23fff%22%20stroke-width%3D%222.4%22%2F%3E%3Cpath%20d%3D%22M8%2015.5h24%22%20stroke%3D%22%23fff%22%20stroke-width%3D%222.4%22%2F%3E%3Ccircle%20cx%3D%2211.6%22%20cy%3D%2212.8%22%20r%3D%221.1%22%20fill%3D%22%23fff%22%2F%3E%3Ccircle%20cx%3D%2215%22%20cy%3D%2212.8%22%20r%3D%221.1%22%20fill%3D%22%23fff%22%2F%3E%3Cpath%20d%3D%22M13%2020.5h8M13%2024.5h5%22%20stroke%3D%22%23fff%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%2F%3E%3Cpath%20d%3D%22M27.5%2019.5l1.2%202.8%202.8%201.2-2.8%201.2-1.2%202.8-1.2-2.8-2.8-1.2%202.8-1.2Z%22%20fill%3D%22%23ffe066%22%2F%3E%3C%2Fsvg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="grapes.css" data-src-only>
@@ -156,7 +157,142 @@ button { font: inherit; color: inherit; }
 /* Toast */
 .toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 9px 14px; border-radius: 7px; font-weight: 500; box-shadow: 0 6px 20px rgba(0,0,0,.2); z-index: 100; }
 
-/* Formatting bar (like a word processor's Home ribbon) */
+/* Ribbon (like a word processor). Each tab has its own color so things are easy to find again. */
+.ribbon { background: var(--panel); border-bottom: 1px solid var(--line); min-width: 0; --hue: var(--accent); --hue-soft: var(--accent-soft); }
+.ribbon.idle .fb, .ribbon.idle .fb-sel { opacity: .6; }
+.rb-tabs { display: flex; align-items: flex-end; gap: 2px; padding: 4px 10px 0; background: var(--panel-2); border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
+.rb-tab { position: relative; border: 0; background: transparent; padding: 6px 14px 7px; border-radius: 8px 8px 0 0; font-weight: 600; font-size: 12.5px; color: var(--muted); cursor: pointer; white-space: nowrap; }
+.rb-tab:hover { color: var(--fg); background: var(--panel); }
+.rb-tab[aria-selected="true"] { color: var(--fg); background: var(--panel); box-shadow: 0 1px 0 var(--panel); margin-bottom: -1px; border: 1px solid var(--line); border-bottom-color: var(--panel); }
+.rb-tab[aria-selected="true"]::after { content: ""; position: absolute; left: 12px; right: 12px; top: 0; height: 3px; border-radius: 0 0 3px 3px; background: var(--tab-hue, var(--accent)); }
+.rb-tab.file { background: var(--accent); color: var(--accent-ink); margin-right: 4px; }
+.rb-tab.file:hover { filter: brightness(1.08); }
+.rb-tab.contextual { color: var(--tab-hue); }
+.rb-tab.contextual small { display: block; font-size: 9px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; opacity: .8; margin-top: -2px; }
+.rb-collapse { margin-left: auto; align-self: center; border: 0; background: transparent; color: var(--muted); cursor: pointer; padding: 4px 8px; border-radius: 6px; }
+.rb-collapse:hover { background: var(--panel); color: var(--fg); }
+.rb-body { display: flex; padding: 6px 6px 2px; overflow-x: auto; overflow-y: hidden; height: 104px; box-sizing: border-box; }
+.ribbon.collapsed .rb-body { display: none; }
+.rb-panel { display: flex; align-items: stretch; }
+.rb-panel[hidden] { display: none; }
+.rb-group { display: flex; flex-direction: column; padding: 0 8px; border-right: 1px solid var(--line); }
+.rb-group:last-child { border-right: 0; }
+.rb-group-body { display: flex; align-items: flex-start; gap: 3px; flex: 1; }
+.rb-stack { flex-direction: column; gap: 5px; justify-content: center; }
+.rb-row { display: flex; gap: 4px; align-items: center; }
+.rb-col { display: flex; flex-direction: column; gap: 1px; }
+.rb-label { text-align: center; font-size: 10.5px; color: var(--muted); padding: 3px 0 2px; white-space: nowrap; }
+.rb-big { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 56px; max-width: 76px; padding: 5px 5px 4px; border: 0; border-radius: 8px; background: transparent; cursor: pointer; font-size: 11.5px; line-height: 1.15; text-align: center; color: var(--fg); }
+.rb-big svg { width: 28px; height: 28px; flex: none; }
+.rb-big:hover, .rb-small:hover, .rb-style:hover { background: var(--hue-soft); }
+.rb-big[aria-pressed="true"], .rb-small[aria-pressed="true"], .rb-big[aria-expanded="true"] { background: var(--hue-soft); color: var(--hue); }
+.rb-small { display: flex; align-items: center; gap: 6px; height: 25px; padding: 0 8px 0 5px; border: 0; border-radius: 5px; background: transparent; cursor: pointer; font-size: 12px; white-space: nowrap; color: var(--fg); }
+.rb-small svg { width: 17px; height: 17px; flex: none; }
+.rb-big svg, .rb-small svg { fill: none; stroke: var(--hue); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.rb-big svg .fill, .rb-small svg .fill { fill: var(--hue-soft); }
+.rb-styles { display: grid; grid-auto-flow: column; grid-template-rows: 1fr; gap: 4px; }
+.rb-style { display: flex; flex-direction: column; justify-content: space-between; width: 68px; height: 56px; padding: 6px 6px 4px; border: 1px solid var(--line); border-radius: 7px; background: var(--panel-2); cursor: pointer; color: var(--fg); text-align: left; overflow: hidden; }
+.rb-style span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rb-style small { font-size: 9.5px; color: var(--muted); }
+.rb-style[aria-pressed="true"] { border-color: var(--hue); box-shadow: inset 0 0 0 1px var(--hue); background: var(--hue-soft); }
+.rb-sel { height: 25px; padding: 0 6px; border: 1px solid var(--line); border-radius: 5px; background: var(--panel-2); color: var(--fg); font: inherit; font-size: 12px; max-width: 180px; }
+.rb-panel[data-tab="home"] { --hue: #2f5bea; --hue-soft: #e3e9fd; }
+.rb-panel[data-tab="insert"] { --hue: #1e9e6a; --hue-soft: #dcf3e9; }
+.rb-panel[data-tab="design"] { --hue: #d1408a; --hue-soft: #fbe3ef; }
+.rb-panel[data-tab="layout"] { --hue: #e07a1f; --hue-soft: #fdebd9; }
+.rb-panel[data-tab="view"] { --hue: #138a9e; --hue-soft: #d9f0f3; }
+.rb-panel[data-tab="developer"] { --hue: #7b4fd6; --hue-soft: #ece4fb; }
+.rb-panel[data-tab="table"] { --hue: #b0127a; --hue-soft: #f8dcee; }
+:root[data-theme="dark"] .rb-panel { --hue-soft: rgba(255,255,255,.08); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .rb-panel { --hue-soft: rgba(255,255,255,.08); } }
+.devpick { align-items: center; padding-left: 8px; }
+.devpick > svg { width: 16px; height: 16px; color: var(--muted); }
+.devpick select { height: 28px; border: 0; background: transparent; color: var(--fg); font: inherit; font-weight: 500; max-width: 150px; cursor: pointer; }
+.devpick select option, .devpick select optgroup { background: var(--panel); color: var(--fg); }
+
+/* One top line: brand, Undo/Redo and Menus on the left of the ribbon tabs; screen size, Preview, Code,
+   Copy HTML and light/dark on the right. The old top bar is hidden. */
+.app.no-topbar { grid-template-rows: auto 1fr auto; }
+.rb-tabs { align-items: flex-end; min-height: 46px; padding-top: 6px; }
+.rb-quick { display: flex; align-items: center; gap: 3px; align-self: center; margin-bottom: 5px; flex: none; }
+.rb-left { margin-right: 10px; }
+.rb-right { margin-left: auto; padding-left: 12px; }
+.rb-left .brand { font-size: 16px; margin-right: 2px; }
+.rb-left .brand-mark { width: 20px; height: 20px; }
+.rb-qsep { width: 1px; height: 20px; background: var(--line); margin: 0 6px; }
+.rb-qbtn { display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 9px; border: 0; border-radius: 6px; background: transparent; color: var(--fg); cursor: pointer; font: inherit; font-weight: 500; white-space: nowrap; }
+.rb-qbtn:hover, .rb-qbtn[aria-expanded="true"], .rb-qbtn[aria-pressed="true"] { background: var(--panel); }
+.rb-qbtn svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.rb-logo { width: 38px; height: 38px; padding: 0; border: 0; border-radius: 12px; background: transparent; cursor: pointer; display: grid; place-items: center; transition: transform .15s, box-shadow .15s, filter .15s; }
+.rb-logo svg { width: 36px; height: 36px; display: block; }
+.rb-logo:hover { transform: translateY(-1px) rotate(-3deg); box-shadow: 0 6px 16px rgba(123,79,214,.35); }
+.rb-logo[aria-expanded="true"] { box-shadow: 0 0 0 3px var(--accent-soft), 0 6px 16px rgba(123,79,214,.35); }
+.rb-left { margin-right: 14px; }
+.rb-right .devpick { background: var(--panel); }
+.rb-right .btn.primary { height: 30px; }
+.rb-tabs .rb-collapse { margin-left: 4px; align-self: center; margin-bottom: 5px; }
+.mega { position: fixed; z-index: 1500; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(190px, max-content); gap: 4px; max-width: calc(100vw - 16px); max-height: calc(100vh - 80px); overflow: auto; padding: 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 18px 44px rgba(0,0,0,.25); }
+.mega-col h4 { margin: 2px 8px 6px; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); }
+.mega .menu-list { position: static; box-shadow: none; border: 0; padding: 0; min-width: 0; max-height: none; overflow: visible; background: transparent; }
+.statusbar .docinfo { display: flex; align-items: baseline; gap: 8px; min-width: 0; flex: none; max-width: 34%; }
+.statusbar .docname { font-weight: 600; color: var(--fg); max-width: 200px; }
+.statusbar .status { font-size: 11px; }
+.sb-sep { width: 1px; height: 14px; background: var(--line); flex: none; }
+@media (max-width: 1280px) { .rb-qbtn .btn-label, .rb-right .btn.primary .btn-label { display: none; } .rb-left .brand-text { display: none; } }
+@media (max-width: 860px) { .rb-tabs { flex-wrap: wrap; } .rb-right { margin-left: 0; } .statusbar .status { display: none; } }
+
+/* Pages panel */
+.pages { padding: 8px 10px; display: grid; gap: 4px; }
+.page-row { display: flex; align-items: center; gap: 6px; padding: 6px 8px; border-radius: 6px; border: 1px solid transparent; cursor: pointer; }
+.page-row:hover { background: var(--panel-2); }
+.page-row.on { background: var(--accent-soft); border-color: var(--accent); }
+.page-row b { flex: 1; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.page-row small { font-family: var(--font-mono); color: var(--muted); font-size: 10.5px; }
+.page-row button { border: 0; background: transparent; cursor: pointer; color: var(--muted); padding: 2px 4px; border-radius: 4px; }
+.page-row button:hover { background: var(--line); color: var(--fg); }
+.pages-actions { display: flex; gap: 6px; flex-wrap: wrap; padding: 4px 10px 12px; }
+.pages-actions .btn { border: 1px solid var(--line); height: 28px; }
+
+/* Galleries (HTML elements, widgets, libraries, templates) */
+.gal-search { margin-bottom: 4px; }
+.gal { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.gal h3 { grid-column: 1 / -1; margin: 10px 0 0; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.gal-item { display: grid; gap: 3px; text-align: left; padding: 9px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel-2); color: var(--fg); cursor: pointer; font: inherit; }
+.gal-item:hover, .gal-item:focus-visible { border-color: var(--accent); background: var(--accent-soft); }
+.gal-item b { font-size: 13px; }
+.gal-item code { font-family: var(--font-mono); font-size: 11px; color: var(--accent); }
+.gal-item span { font-size: 11.5px; color: var(--muted); line-height: 1.35; }
+.gal-item.on { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.tpl { display: grid; gap: 6px; padding: 8px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel-2); cursor: pointer; text-align: left; color: var(--fg); font: inherit; position: relative; }
+.tpl:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,.12); }
+.tpl-thumb { position: relative; height: 130px; overflow: hidden; border-radius: 6px; background: #fff; border: 1px solid var(--line); }
+.tpl-thumb iframe { position: absolute; left: 0; top: 0; width: 1200px; height: 900px; border: 0; transform: scale(.2); transform-origin: 0 0; pointer-events: none; }
+.tpl b { font-size: 13px; }
+.tpl span { font-size: 11.5px; color: var(--muted); }
+.tpl .tpl-del { position: absolute; top: 12px; right: 12px; border: 0; background: rgba(0,0,0,.6); color: #fff; border-radius: 4px; cursor: pointer; padding: 2px 6px; font-size: 11px; }
+.tpl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px; }
+
+/* Backstage (File tab) */
+.backstage { position: fixed; inset: 0; z-index: 1700; display: grid; grid-template-columns: 230px 1fr; background: var(--bg); }
+.bs-nav { background: linear-gradient(170deg, var(--accent), #7b4fd6); color: #fff; padding: 18px 12px; display: flex; flex-direction: column; gap: 2px; overflow: auto; }
+.bs-nav .bs-back { display: flex; align-items: center; gap: 8px; border: 0; background: rgba(255,255,255,.14); color: #fff; padding: 8px 10px; border-radius: 8px; cursor: pointer; font: inherit; font-weight: 600; margin-bottom: 14px; }
+.bs-nav button.bs-item { text-align: left; border: 0; background: transparent; color: #fff; padding: 9px 12px; border-radius: 8px; cursor: pointer; font: inherit; font-size: 14px; }
+.bs-nav button.bs-item:hover, .bs-nav button.bs-item.on { background: rgba(255,255,255,.18); }
+.bs-nav hr { border: 0; border-top: 1px solid rgba(255,255,255,.25); margin: 8px 4px; width: auto; }
+.bs-main { overflow: auto; padding: 34px 40px 60px; }
+.bs-main h1 { font-family: var(--font-display); font-size: 30px; margin: 0 0 4px; }
+.bs-main h2 { font-family: var(--font-display); font-size: 17px; margin: 28px 0 12px; }
+.bs-main p.lead { color: var(--muted); margin: 0 0 8px; font-size: 14px; }
+.bs-main .bs-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.bs-main .btn { border: 1px solid var(--line); height: 34px; }
+@media (max-width: 720px) { .backstage { grid-template-columns: 1fr; grid-template-rows: auto 1fr; } .bs-nav { flex-direction: row; flex-wrap: wrap; } .bs-main { padding: 20px; } }
+
+/* Draw table */
+.draw-layer { position: absolute; inset: 0; z-index: 40; cursor: crosshair; }
+.draw-box { position: absolute; border: 2px dashed var(--accent); background: rgba(47,91,234,.08); display: grid; place-items: center; font-weight: 700; color: var(--accent); background-image: linear-gradient(to right, rgba(47,91,234,.35) 1px, transparent 1px), linear-gradient(to bottom, rgba(47,91,234,.35) 1px, transparent 1px); }
+.draw-hint { position: absolute; left: 50%; top: 12px; transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 7px 12px; border-radius: 7px; font-weight: 500; pointer-events: none; }
+
+/* Formatting controls (used inside the ribbon) */
 .gjs-rte-toolbar { display: none !important; }
 .fmtbar { display: flex; align-items: center; gap: 6px; padding: 5px 12px; background: var(--panel); border-bottom: 1px solid var(--line); flex-wrap: wrap; min-width: 0; }
 .fmtbar.idle .fb, .fmtbar.idle .fb-sel { opacity: .6; }
@@ -173,13 +309,15 @@ button { font: inherit; color: inherit; }
 .fb-swatch { display: block; width: 16px; height: 4px; border-radius: 1px; border: 1px solid rgba(0,0,0,.15); }
 
 /* Status bar */
-.statusbar { display: flex; align-items: center; gap: 12px; height: 26px; padding: 0 10px; background: var(--panel); border-top: 1px solid var(--line); font-size: 11.5px; color: var(--muted); min-width: 0; }
+.statusbar { display: flex; align-items: center; gap: 12px; min-height: 30px; padding: 2px 10px calc(4px + env(safe-area-inset-bottom, 0px)); background: var(--panel); border-top: 1px solid var(--line); font-size: 11.5px; color: var(--muted); min-width: 0; }
 .sb-path { display: flex; align-items: center; gap: 2px; min-width: 0; overflow: hidden; white-space: nowrap; flex: 1; }
 .sb-path button { border: 0; background: transparent; padding: 2px 5px; border-radius: 4px; cursor: pointer; color: var(--fg); font-size: 11.5px; }
 .sb-path button:hover { background: var(--panel-2); }
 .sb-path button:last-child { font-weight: 600; color: var(--accent); }
 .sb-path span { color: var(--muted); }
 .sb-count { white-space: nowrap; }
+.sb-std { border: 1px solid var(--line); background: var(--panel-2); color: var(--fg); border-radius: 999px; padding: 1px 9px; font-size: 11px; font-family: var(--font-mono); cursor: pointer; white-space: nowrap; }
+.sb-std:hover { border-color: var(--accent); color: var(--accent); }
 .sb-zoom { display: inline-flex; align-items: center; gap: 2px; }
 .sb-zoom button { width: 22px; height: 20px; border: 0; border-radius: 4px; background: transparent; cursor: pointer; color: var(--fg); font-size: 14px; }
 .sb-zoom button:hover { background: var(--panel-2); }
@@ -274,16 +412,10 @@ button { font: inherit; color: inherit; }
     </div>
     <div class="spacer"></div>
 
-    <div class="group" role="group" aria-label="Preview size">
-      <button class="btn" id="dev-desktop" data-device="Desktop" aria-pressed="true" title="Desktop">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="4" width="20" height="13" rx="1.5"/><path d="M8 21h8M12 17v4"/></svg>
-      </button>
-      <button class="btn" id="dev-tablet" data-device="Tablet" aria-pressed="false" title="Tablet (768px)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M11 18h2"/></svg>
-      </button>
-      <button class="btn" id="dev-mobile" data-device="Mobile" aria-pressed="false" title="Phone (375px)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>
-      </button>
+    <div class="group devpick" role="group" aria-label="Preview size">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="2" y="4" width="13" height="10" rx="1.5"/><rect x="16" y="8" width="6" height="12" rx="1.2"/><path d="M6 18h6"/></svg>
+      <select id="device-sel" title="Preview the page at the size of a computer, phone or tablet" aria-label="Preview size"></select>
+      <button class="btn" id="rotate" title="Turn the phone or tablet sideways" aria-label="Rotate"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="7" y="3" width="10" height="16" rx="2"/><path d="M3 14a9 9 0 0 0 8 7l-2-2M21 10a9 9 0 0 0-8-7l2 2"/></svg></button>
     </div>
 
     <div class="group hide-xs" role="group" aria-label="History">
@@ -319,60 +451,108 @@ button { font: inherit; color: inherit; }
     </button>
   </header>
 
-  <div class="fmtbar idle" id="fmtbar" role="toolbar" aria-label="Formatting">
-    <select class="fb-sel" id="fb-type" title="Text type (Ctrl+Alt+1–4 for headings, Ctrl+Alt+0 for normal text)" aria-label="Text type"></select>
-    <select class="fb-sel" id="fb-font" title="Font" aria-label="Font"></select>
-    <select class="fb-sel narrow" id="fb-size" title="Font size (pixels)" aria-label="Font size"></select>
-    <div class="fgroup" role="group" aria-label="Character formatting">
-      <button class="fb" data-act="bold" title="Bold (Ctrl+B)" aria-label="Bold" aria-pressed="false"><b>B</b></button>
-      <button class="fb" data-act="italic" title="Italic (Ctrl+I)" aria-label="Italic" aria-pressed="false"><i style="font-family:Georgia,serif;font-weight:600">I</i></button>
-      <button class="fb" data-act="underline" title="Underline (Ctrl+U)" aria-label="Underline" aria-pressed="false"><u>U</u></button>
-      <button class="fb" data-act="strike" title="Strikethrough" aria-label="Strikethrough" aria-pressed="false"><s>S</s></button>
-      <button class="fb" data-act="sub" title="Subscript (Ctrl+=)" aria-label="Subscript" aria-pressed="false">x<sub>2</sub></button>
-      <button class="fb" data-act="sup" title="Superscript (Ctrl+Shift+=)" aria-label="Superscript" aria-pressed="false">x<sup>2</sup></button>
-      <button class="fb" data-act="code" title="Inline code" aria-label="Inline code" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="m8 8-4 4 4 4M16 8l4 4-4 4"/></svg></button>
-    </div>
-    <div class="fgroup" role="group" aria-label="Colors">
-      <button class="fb fb-color" data-act="color" title="Font color" aria-label="Font color" aria-haspopup="true"><span class="fb-a">A</span><span class="fb-swatch" id="sw-color" style="background:#c0392b"></span></button>
-      <button class="fb fb-color" data-act="highlight" title="Highlight color" aria-label="Highlight color" aria-haspopup="true"><svg viewBox="0 0 24 24" style="height:13px"><path d="m14 5 5 5-8 8H6v-5Z"/><path d="m11 8 5 5"/></svg><span class="fb-swatch" id="sw-highlight" style="background:#fff36b"></span></button>
-    </div>
-    <div class="fgroup" role="group" aria-label="Alignment">
-      <button class="fb" data-act="align-left" title="Align left (Ctrl+L)" aria-label="Align left" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 10h10M4 14h16M4 18h10"/></svg></button>
-      <button class="fb" data-act="align-center" title="Center (Ctrl+E)" aria-label="Center" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M4 6h16M7 10h10M4 14h16M7 18h10"/></svg></button>
-      <button class="fb" data-act="align-right" title="Align right (Ctrl+R)" aria-label="Align right" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M4 6h16M10 10h10M4 14h16M10 18h10"/></svg></button>
-      <button class="fb" data-act="align-justify" title="Justify (Ctrl+J)" aria-label="Justify" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg></button>
-    </div>
-    <div class="fgroup" role="group" aria-label="Lists">
-      <button class="fb" data-act="ul" title="Bulleted list (Ctrl+Shift+L)" aria-label="Bulleted list" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1" fill="currentColor"/><circle cx="4.5" cy="12" r="1" fill="currentColor"/><circle cx="4.5" cy="18" r="1" fill="currentColor"/></svg></button>
-      <button class="fb" data-act="ol" title="Numbered list" aria-label="Numbered list" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M10 6h10M10 12h10M10 18h10"/><path d="M4 5h1v3M4 8h2M4 11h2l-2 2h2M4 16h2l-1 1 1 1H4" stroke-width="1.4"/></svg></button>
-      <button class="fb" data-act="outdent" title="Decrease indent" aria-label="Decrease indent"><svg viewBox="0 0 24 24"><path d="M11 6h9M11 12h9M11 18h9M7 9l-3 3 3 3"/></svg></button>
-      <button class="fb" data-act="indent" title="Increase indent" aria-label="Increase indent"><svg viewBox="0 0 24 24"><path d="M11 6h9M11 12h9M11 18h9M4 9l3 3-3 3"/></svg></button>
-    </div>
-    <div class="fgroup" role="group" aria-label="Links and formatting tools">
-      <button class="fb" data-act="link" title="Link (Ctrl+K)" aria-label="Link"><svg viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg></button>
-      <button class="fb" data-act="unlink" title="Remove link" aria-label="Remove link"><svg viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l1-1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7"/><path d="M17 3v3M21 7h-3M3 21l18-18" stroke-width="1.5"/></svg></button>
-      <button class="fb" data-act="clear" title="Clear formatting" aria-label="Clear formatting"><svg viewBox="0 0 24 24"><path d="M6 5h12M12 5l-3 14M15 15l5 5M20 15l-5 5"/></svg></button>
-      <button class="fb" data-act="painter" title="Format painter: copy this element's look to the next one you click" aria-label="Format painter" aria-pressed="false"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="13" height="6" rx="1"/><path d="M17 6h3v5h-8v3"/><rect x="10" y="14" width="4" height="7" rx="1"/></svg></button>
-    </div>
-    <div class="fgroup" role="group" aria-label="Insert">
-      <button class="fb" data-act="table" title="Insert table" aria-label="Insert table" aria-haspopup="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M3 10h18M3 15h18M9 4v16M15 4v16"/></svg></button>
-      <button class="fb" data-act="symbol" title="Symbol or emoji" aria-label="Symbol or emoji" aria-haspopup="true"><span style="font-family:Georgia,serif;font-size:15px">Ω</span></button>
-      <button class="fb" data-act="image" title="Picture from this computer" aria-label="Picture from this computer"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="1.5"/><circle cx="9" cy="10" r="1.6"/><path d="m3 17 5-4 4 3 3-2 6 4"/></svg></button>
-      <button class="fb" data-act="find" title="Find and replace (Ctrl+F)" aria-label="Find and replace"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 5 5"/></svg></button>
+  <div class="ribbon idle" id="fmtbar">
+    <div class="rb-tabs" id="rb-tabs" role="tablist" aria-label="Ribbon"></div>
+    <div class="rb-body" id="rb-body">
+      <div class="rb-panel" data-tab="home" role="tabpanel" aria-label="Home">
+        <div class="rb-group" role="group" aria-label="Clipboard">
+          <div class="rb-group-body">
+            <button class="rb-big" data-act="paste-el" title="Paste the copied element after the selected one (Ctrl+V)"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2" class="fill"/><path d="M9 4V3h6v1M9 9h6M9 13h6M9 17h4"/></svg><span>Paste</span></button>
+            <div class="rb-col">
+              <button class="rb-small" data-act="cut-el" title="Cut the selected element"><svg viewBox="0 0 24 24"><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8 16 18 4M16 16 6 4"/></svg>Cut</button>
+              <button class="rb-small" data-act="copy-el" title="Copy the selected element (Ctrl+C)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a1 1 0 0 1 1-1h9"/></svg>Copy</button>
+              <button class="rb-small" data-act="painter" title="Format painter: copy this element's look to the next one you click" aria-pressed="false"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="13" height="6" rx="1"/><path d="M17 6h3v5h-8v3"/><rect x="10" y="14" width="4" height="7" rx="1"/></svg>Format painter</button>
+            </div>
+          </div>
+          <div class="rb-label">Clipboard</div>
+        </div>
+        <div class="rb-group" role="group" aria-label="Font">
+          <div class="rb-group-body rb-stack">
+            <div class="rb-row">
+              <select class="fb-sel" id="fb-font" title="Font" aria-label="Font"></select>
+              <select class="fb-sel narrow" id="fb-size" title="Font size (pixels)" aria-label="Font size"></select>
+            </div>
+            <div class="rb-row">
+              <div class="fgroup">
+                <button class="fb" data-act="bold" title="Bold (Ctrl+B)" aria-label="Bold" aria-pressed="false"><b>B</b></button>
+                <button class="fb" data-act="italic" title="Italic (Ctrl+I)" aria-label="Italic" aria-pressed="false"><i style="font-family:Georgia,serif;font-weight:600">I</i></button>
+                <button class="fb" data-act="underline" title="Underline (Ctrl+U)" aria-label="Underline" aria-pressed="false"><u>U</u></button>
+                <button class="fb" data-act="strike" title="Strikethrough" aria-label="Strikethrough" aria-pressed="false"><s>S</s></button>
+                <button class="fb" data-act="sub" title="Subscript (Ctrl+=)" aria-label="Subscript" aria-pressed="false">x<sub>2</sub></button>
+                <button class="fb" data-act="sup" title="Superscript (Ctrl+Shift+=)" aria-label="Superscript" aria-pressed="false">x<sup>2</sup></button>
+                <button class="fb" data-act="code" title="Inline code" aria-label="Inline code" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="m8 8-4 4 4 4M16 8l4 4-4 4"/></svg></button>
+              </div>
+              <div class="fgroup">
+                <button class="fb fb-color" data-act="color" title="Font color" aria-label="Font color" aria-haspopup="true"><span class="fb-a">A</span><span class="fb-swatch" id="sw-color" style="background:#c0392b"></span></button>
+                <button class="fb fb-color" data-act="highlight" title="Highlight color" aria-label="Highlight color" aria-haspopup="true"><svg viewBox="0 0 24 24" style="height:13px"><path d="m14 5 5 5-8 8H6v-5Z"/><path d="m11 8 5 5"/></svg><span class="fb-swatch" id="sw-highlight" style="background:#fff36b"></span></button>
+                <button class="fb" data-act="clear" title="Clear formatting" aria-label="Clear formatting"><svg viewBox="0 0 24 24"><path d="M6 5h12M12 5l-3 14M15 15l5 5M20 15l-5 5"/></svg></button>
+              </div>
+            </div>
+          </div>
+          <div class="rb-label">Font</div>
+        </div>
+        <div class="rb-group" role="group" aria-label="Paragraph">
+          <div class="rb-group-body rb-stack">
+            <div class="rb-row">
+              <div class="fgroup">
+                <button class="fb" data-act="ul" title="Bulleted list (Ctrl+Shift+L)" aria-label="Bulleted list" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1" fill="currentColor"/><circle cx="4.5" cy="12" r="1" fill="currentColor"/><circle cx="4.5" cy="18" r="1" fill="currentColor"/></svg></button>
+                <button class="fb" data-act="ol" title="Numbered list" aria-label="Numbered list" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M10 6h10M10 12h10M10 18h10"/><path d="M4 5h1v3M4 8h2M4 11h2l-2 2h2M4 16h2l-1 1 1 1H4" stroke-width="1.4"/></svg></button>
+                <button class="fb" data-act="outdent" title="Decrease indent" aria-label="Decrease indent"><svg viewBox="0 0 24 24"><path d="M11 6h9M11 12h9M11 18h9M7 9l-3 3 3 3"/></svg></button>
+                <button class="fb" data-act="indent" title="Increase indent" aria-label="Increase indent"><svg viewBox="0 0 24 24"><path d="M11 6h9M11 12h9M11 18h9M4 9l3 3-3 3"/></svg></button>
+              </div>
+            </div>
+            <div class="rb-row">
+              <div class="fgroup">
+                <button class="fb" data-act="align-left" title="Align left (Ctrl+L)" aria-label="Align left" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 10h10M4 14h16M4 18h10"/></svg></button>
+                <button class="fb" data-act="align-center" title="Center (Ctrl+E)" aria-label="Center" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M4 6h16M7 10h10M4 14h16M7 18h10"/></svg></button>
+                <button class="fb" data-act="align-right" title="Align right (Ctrl+R)" aria-label="Align right" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M4 6h16M10 10h10M4 14h16M10 18h10"/></svg></button>
+                <button class="fb" data-act="align-justify" title="Justify (Ctrl+J)" aria-label="Justify" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg></button>
+              </div>
+            </div>
+          </div>
+          <div class="rb-label">Paragraph</div>
+        </div>
+        <div class="rb-group" role="group" aria-label="Styles">
+          <div class="rb-group-body">
+            <div class="rb-styles" id="rb-styles">
+              <button class="rb-style" data-act="type-p" title="Normal text (Ctrl+Alt+0)" aria-pressed="false"><span style="font-size:13px">Normal</span><small>Paragraph</small></button>
+              <button class="rb-style" data-act="type-h1" title="Heading 1 (Ctrl+Alt+1)" aria-pressed="false"><span style="font-size:19px;font-weight:700">Title</span><small>Heading 1</small></button>
+              <button class="rb-style" data-act="type-h2" title="Heading 2 (Ctrl+Alt+2)" aria-pressed="false"><span style="font-size:16px;font-weight:700">Heading</span><small>Heading 2</small></button>
+              <button class="rb-style" data-act="type-h3" title="Heading 3 (Ctrl+Alt+3)" aria-pressed="false"><span style="font-size:14px;font-weight:700">Subhead</span><small>Heading 3</small></button>
+              <button class="rb-style" data-act="type-blockquote" title="Quote" aria-pressed="false"><span style="font-size:13px;font-style:italic">“Quote”</span><small>Quote</small></button>
+              <button class="rb-style" data-act="type-pre" title="Code block" aria-pressed="false"><span style="font-size:12px;font-family:Consolas,monospace">code()</span><small>Code</small></button>
+            </div>
+            <select class="fb-sel" id="fb-type" title="Text type" aria-label="Text type" hidden></select>
+          </div>
+          <div class="rb-label">Styles</div>
+        </div>
+        <div class="rb-group" role="group" aria-label="Editing">
+          <div class="rb-group-body">
+            <div class="rb-col">
+              <button class="rb-small" data-act="find" title="Find words on the page (Ctrl+F)"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 5 5"/></svg>Find</button>
+              <button class="rb-small" data-act="replace" title="Find and replace (Ctrl+H)"><svg viewBox="0 0 24 24"><path d="M4 7h11l-3-3M20 17H9l3 3"/></svg>Replace</button>
+              <button class="rb-small" data-act="select-parent" title="Select the element around this one"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" stroke-dasharray="3 2"/><rect x="8" y="8" width="8" height="8" rx="1"/></svg>Select parent</button>
+            </div>
+          </div>
+          <div class="rb-label">Editing</div>
+        </div>
+      </div>
     </div>
   </div>
 
   <main class="work">
     <aside class="side left" id="left">
       <div class="tabs" role="tablist">
+        <button class="tab" role="tab" id="tab-pages" aria-selected="false" data-pane="pane-pages">Pages</button>
+        <button class="tab" role="tab" id="tab-layers" aria-selected="false" data-pane="pane-layers">Objects</button>
         <button class="tab" role="tab" id="tab-blocks" aria-selected="true" data-pane="pane-blocks">Blocks</button>
-        <button class="tab" role="tab" id="tab-layers" aria-selected="false" data-pane="pane-layers">Layers</button>
       </div>
       <div class="pane" id="pane-blocks">
         <p class="pane-hint">Drag a block onto the page. Double-click text on the page to edit it.</p>
         <div id="blocks"></div>
       </div>
-      <div class="pane" id="pane-layers" hidden><div id="layers"></div></div>
+      <div class="pane" id="pane-layers" hidden><p class="pane-hint">Every object on the page, inside one another. Click to select, drag to move, the eye hides it while you work.</p><div id="layers"></div></div>
+      <div class="pane" id="pane-pages" hidden><div id="pages"></div></div>
     </aside>
 
     <div class="canvas-wrap"><div id="gjs"></div></div>
@@ -397,6 +577,7 @@ button { font: inherit; color: inherit; }
   <footer class="statusbar" id="statusbar">
     <div class="sb-path" id="sb-path" aria-label="Selected element and its parents"></div>
     <span class="sb-count" id="sb-count"></span>
+    <button class="sb-std" id="sb-std" type="button" data-compat-label="1" title="The HTML standard the saved page follows. Click to change it.">HTML5</button>
     <div class="sb-zoom" role="group" aria-label="Zoom">
       <button id="zoom-out" title="Zoom out" aria-label="Zoom out">−</button>
       <button class="zoom-val" id="zoom-val" title="Back to 100%">100%</button>
@@ -499,7 +680,42 @@ h2{font-size:32px;margin:0 0 24px}
 .footer p{margin:0}
 @media (max-width:600px){h1{font-size:34px}.hero{padding-top:24px}}`;
 
-  let storage = { type: 'local', autosave: true, stepsBeforeSave: 1, options: { local: { key: STORAGE_KEY } } };
+  // Site settings saved with the project: compatibility mode, libraries, widgets, page details.
+  const settings = { doctype: 'html5', libs: [], widgets: [], script: '', pages: {} };
+  let storage = {
+    type: 'local', autosave: true, stepsBeforeSave: 1, options: { local: { key: STORAGE_KEY } },
+    onStore: (data) => ({ ...data, sitecraft: settings }),
+    onLoad: (data) => { if (data && data.sitecraft) Object.assign(settings, data.sitecraft); return data; },
+  };
+
+  // Preview sizes in CSS pixels (what the browser on that screen uses). Styles made while previewing
+  // a tablet apply up to 992px wide, and on a phone up to 600px, so the page adapts like a real site.
+  const DEVICES = [
+    ['Computers', '', [
+      ['Desktop', 'Fit the window', 0, 0], ['pc-1280', 'Laptop 1280 × 800', 1280, 800], ['pc-1366', 'Laptop 1366 × 768', 1366, 768],
+      ['pc-1440', 'Laptop 1440 × 900', 1440, 900], ['pc-1536', 'Desktop 1536 × 864', 1536, 864], ['pc-1920', 'Full HD 1920 × 1080', 1920, 1080],
+      ['pc-2560', 'Quad HD 2560 × 1440', 2560, 1440]]],
+    ['Tablets', '992px', [
+      ['Tablet', 'Tablet 768 × 1024', 768, 1024], ['ipad-mini', 'iPad mini 744 × 1133', 744, 1133], ['ipad-air', 'iPad Air 820 × 1180', 820, 1180],
+      ['ipad-pro-11', 'iPad Pro 11" 834 × 1194', 834, 1194], ['ipad-pro-13', 'iPad Pro 13" 1024 × 1366', 1024, 1366],
+      ['tab-s9', 'Samsung Galaxy Tab S9 800 × 1280', 800, 1280], ['tab-s9-ultra', 'Samsung Galaxy Tab S9 Ultra 924 × 1480', 924, 1480],
+      ['tab-a9', 'Samsung Galaxy Tab A9+ 600 × 960', 600, 960], ['surface-pro', 'Microsoft Surface Pro 912 × 1368', 912, 1368]]],
+    ['Phones', '600px', [
+      ['Mobile', 'Small phone 375 × 667', 375, 667], ['iphone-se', 'iPhone SE 375 × 667', 375, 667], ['iphone-13-mini', 'iPhone 13 mini 375 × 812', 375, 812],
+      ['iphone-15', 'iPhone 15 / 16 393 × 852', 393, 852], ['iphone-15-plus', 'iPhone 15 Plus 430 × 932', 430, 932],
+      ['iphone-16-pro-max', 'iPhone 16 Pro Max 440 × 956', 440, 956],
+      ['galaxy-s24', 'Samsung Galaxy S24 360 × 780', 360, 780], ['galaxy-s24-plus', 'Samsung Galaxy S24+ 384 × 832', 384, 832],
+      ['galaxy-s24-ultra', 'Samsung Galaxy S24 Ultra 412 × 891', 412, 891], ['galaxy-a55', 'Samsung Galaxy A55 412 × 915', 412, 915],
+      ['galaxy-fold', 'Samsung Galaxy Z Fold (folded) 344 × 882', 344, 882], ['galaxy-flip', 'Samsung Galaxy Z Flip 412 × 1004', 412, 1004],
+      ['pixel-8', 'Google Pixel 8 412 × 915', 412, 915], ['pixel-8-pro', 'Google Pixel 8 Pro 448 × 998', 448, 998],
+      ['pixel-9-pro-xl', 'Google Pixel 9 Pro XL 412 × 923', 412, 923]]],
+  ];
+  const deviceList = [];
+  DEVICES.forEach(([, media, list]) => list.forEach(([id, name, w, h]) => {
+    if (!w) { deviceList.push({ id, name, width: '' }); return; }
+    deviceList.push({ id, name, width: w + 'px', height: h + 'px', widthMedia: media });
+    if (media) deviceList.push({ id: id + '-land', name: name + ' (sideways)', width: h + 'px', height: w + 'px', widthMedia: media });
+  }));
   let hasSaved = false;
   try { hasSaved = !!localStorage.getItem(STORAGE_KEY); } catch (e) { storage = false; }
 
@@ -526,13 +742,7 @@ h2{font-size:32px;margin:0 0 24px}
     styleManager: { appendTo: '#styles' },
     selectorManager: { appendTo: '#selectors', componentFirst: true },
     traitManager: { appendTo: '#traits' },
-    deviceManager: {
-      devices: [
-        { id: 'Desktop', name: 'Desktop', width: '' },
-        { id: 'Tablet', name: 'Tablet', width: '768px', widthMedia: '992px' },
-        { id: 'Mobile', name: 'Mobile', width: '375px', widthMedia: '600px' },
-      ],
-    },
+    deviceManager: { devices: deviceList },
   });
 
   // ---- Blocks ----
@@ -603,11 +813,35 @@ h2{font-size:32px;margin:0 0 24px}
   editor.on('component:toggled', () => { hint.hidden = !!editor.getSelected(); });
 
   // ---- Toolbar ----
-  const devBtns = document.querySelectorAll('[data-device]');
-  devBtns.forEach((b) => b.onclick = () => {
-    editor.setDevice(b.dataset.device);
-    devBtns.forEach((x) => x.setAttribute('aria-pressed', x === b));
+  const devSel = document.getElementById('device-sel');
+  DEVICES.forEach(([group, , list]) => {
+    const og = document.createElement('optgroup'); og.label = group;
+    list.forEach(([id, label]) => og.append(new Option(label, id)));
+    devSel.append(og);
   });
+  let sideways = false;
+  const isComputer = (id) => DEVICES[0][2].some(([d]) => d === id);
+  function setDevice(id, turn = sideways) {
+    sideways = turn && !isComputer(id);
+    editor.setDevice(sideways ? id + '-land' : id);
+    devSel.value = id;
+    document.getElementById('rotate').setAttribute('aria-pressed', sideways);
+    fitZoom();
+  }
+  // Wide screens are shrunk to fit the window, like zooming out.
+  function fitZoom() {
+    setTimeout(() => {
+      const dev = editor.Devices.get(editor.getDevice());
+      const w = parseInt(dev && dev.get('width'), 10) || 0;
+      const avail = document.querySelector('.canvas-wrap').clientWidth - 48;
+      setZoom(w && w > avail ? Math.max(25, Math.floor((avail / w) * 100)) : 100);
+    }, 60);
+  }
+  devSel.onchange = () => setDevice(devSel.value);
+  document.getElementById('rotate').onclick = () => {
+    if (isComputer(devSel.value)) { toast('Pick a phone or tablet to turn it sideways.'); return; }
+    setDevice(devSel.value, !sideways);
+  };
   document.getElementById('undo').onclick = () => editor.UndoManager.undo();
   document.getElementById('redo').onclick = () => editor.UndoManager.redo();
 
@@ -651,8 +885,34 @@ h2{font-size:32px;margin:0 0 24px}
   }
   document.getElementById('code').onclick = toggleCode;
 
-  function fullHtml() {
-    return `<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n<title>My site</title>\n<style>\n${editor.getCss()}\n</style>\n</head>\n<body>\n${editor.getHtml().replace(/^<body[^>]*>|<\/body>$/g, '')}\n</body>\n</html>\n`;
+  // Compatibility modes: which HTML standard the saved file follows.
+  const DOCTYPES = {
+    html5: { label: 'HTML5 (modern, recommended)', doctype: '<!doctype html>', html: '<html lang="LANG">', charset: '<meta charset="utf-8">' },
+    'xhtml-strict': { label: 'XHTML 1.0 Strict', xml: true, doctype: '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">', html: '<html xmlns="http://www.w3.org/1999/xhtml" lang="LANG" xml:lang="LANG">', charset: '<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />' },
+    'xhtml-trans': { label: 'XHTML 1.0 Transitional', xml: true, doctype: '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">', html: '<html xmlns="http://www.w3.org/1999/xhtml" lang="LANG" xml:lang="LANG">', charset: '<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />' },
+    html401: { label: 'HTML 4.01 Transitional (very old browsers)', old: true, doctype: '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">', html: '<html lang="LANG">', charset: '<meta http-equiv="Content-Type" content="text/html; charset=utf-8">' },
+  };
+  const exportHooks = { head: [], bodyEnd: [] };
+  const importHooks = [];
+  const pageMeta = (pg) => ({ title: (pg && pg.getName && pg.getName()) || 'My site', description: '', lang: 'en', ...(settings.pages[pg && pg.getId()] || {}) });
+  function saveSettings() { setDirty(true); try { editor.store(); } catch (e) {} }
+  function fullHtml(page) {
+    const pg = page || editor.Pages.getSelected();
+    const comp = pg.getMainComponent();
+    const mode = DOCTYPES[settings.doctype] || DOCTYPES.html5;
+    const meta = pageMeta(pg);
+    const end = mode.xml ? ' />' : '>';
+    const VOID = '(br|hr|img|input|meta|link|source|track|wbr|area|col|embed|param)';
+    let body = editor.getHtml({ component: comp }).replace(/^<body[^>]*>|<\/body>$/g, '');
+    body = mode.xml ? body.replace(new RegExp(`<${VOID}(\\b[^>]*?)\\s*\\/?>`, 'gi'), '<$1$2 />')
+      : body.replace(new RegExp(`<${VOID}(\\b[^>]*?)\\s*\\/>`, 'gi'), '<$1$2>');
+    const q = (s) => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+    const head = exportHooks.head.map((f) => f(mode, pg)).join('');
+    const tail = exportHooks.bodyEnd.map((f) => f(mode, pg)).join('');
+    const typeAttr = mode.xml || mode.old ? ' type="text/css"' : '';
+    return `${mode.doctype}\n${mode.html.replace(/LANG/g, q(meta.lang))}\n<head>\n${mode.charset}\n<meta name="viewport" content="width=device-width, initial-scale=1"${end}\n<title>${q(meta.title)}</title>\n`
+      + (meta.description ? `<meta name="description" content="${q(meta.description)}"${end}\n` : '')
+      + `${head}<style${typeAttr}>\n${editor.getCss({ component: comp })}\n</style>\n</head>\n<body>\n${body}\n${tail}</body>\n</html>\n`;
   }
   document.getElementById('copy').onclick = () => {
     const html = fullHtml();
@@ -748,6 +1008,7 @@ h2{font-size:32px;margin:0 0 24px}
 
   function parseHtmlFile(text) {
     const doc = new DOMParser().parseFromString(text, 'text/html');
+    importHooks.forEach((f) => { try { f(doc, text); } catch (e) { /* keep opening */ } });
     const css = [...doc.querySelectorAll('style')].map((s) => s.textContent).join('\n');
     doc.querySelectorAll('style, script').forEach((n) => n.remove());
     return { html: doc.body ? doc.body.innerHTML : '', css };
@@ -818,7 +1079,6 @@ h2{font-size:32px;margin:0 0 24px}
       (side === left ? right : left).classList.remove('open');
     }
   }
-  function setDevice(name) { document.querySelector(`[data-device="${name}"]`).click(); }
   const THEME_KEY = 'sitecraft-theme';
   function getTheme() { return document.documentElement.dataset.theme || 'system'; }
   function setTheme(t) {
@@ -1481,7 +1741,8 @@ h2{font-size:32px;margin:0 0 24px}
     if (again) return null;
     const p = keepEditing(mk('div', { className: 'pop' }, ...content));
     document.body.append(p);
-    const r = btn.getBoundingClientRect();
+    let r = btn.getBoundingClientRect();
+    if (!r.width) r = { left: (innerWidth - p.offsetWidth) / 2, bottom: innerHeight / 4 };
     p.style.left = Math.max(8, Math.min(r.left, innerWidth - p.offsetWidth - 8)) + 'px';
     p.style.top = (r.bottom + 4) + 'px';
     // Clicks inside keep the text selection in the page (except in the color field).
@@ -1546,8 +1807,17 @@ h2{font-size:32px;margin:0 0 24px}
     link: linkDialog, unlink, clear: clearFormatting, painter: togglePainter,
     table: (b) => tablePop(b), symbol: (b) => symbolPop(b), image: insertImageFile, find: () => openFind(false),
   };
-  fmtbar.addEventListener('mousedown', (e) => { if (e.target.closest('.fb')) e.preventDefault(); });
-  fmtbar.addEventListener('click', (e) => { const b = e.target.closest('.fb'); if (b) ACTIONS[b.dataset.act](b); });
+  Object.assign(ACTIONS, {
+    'paste-el': () => (editor.getSelected() ? editor.runCommand('core:paste') : toast('Click where the copied element should go first.')),
+    'cut-el': cutElement,
+    'copy-el': () => (editor.getSelected() ? (editor.runCommand('core:copy'), toast('Copied. Click a place on the page, then Paste.')) : needTarget()),
+    replace: () => openFind(true),
+    'select-parent': () => { stopEditing(); if (editor.getSelected()) editor.runCommand('core:component-exit'); else needTarget(); },
+  });
+  TYPES.forEach(([t]) => { ACTIONS['type-' + t] = () => setTextType(t); });
+  // Every ribbon button names its action in data-act. Pressing it keeps the text selection in the page.
+  fmtbar.addEventListener('mousedown', (e) => { if (e.target.closest('[data-act]')) e.preventDefault(); });
+  fmtbar.addEventListener('click', (e) => { const b = e.target.closest('[data-act]'); if (b && ACTIONS[b.dataset.act]) ACTIONS[b.dataset.act](b); });
 
   function fontKey(ff) { return String(ff || '').split(',')[0].replace(/["']/g, '').trim().toLowerCase(); }
   function refresh() {
@@ -1573,10 +1843,15 @@ h2{font-size:32px;margin:0 0 24px}
     fbBtn('ul').setAttribute('aria-pressed', !!c && c.get('tagName') === 'ul');
     fbBtn('ol').setAttribute('aria-pressed', !!c && c.get('tagName') === 'ol');
     fbBtn('painter').setAttribute('aria-pressed', !!painter);
+    const tag = c && c.get('type') === 'text' ? c.get('tagName') : '';
+    fmtbar.querySelectorAll('[data-act^="type-"]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.act === 'type-' + tag));
+    refreshHooks.forEach((f) => { try { f(c); } catch (e) { /* a module's display only */ } });
     updatePath();
   }
+  const refreshHooks = [];
   let refreshQueued = false;
-  function refreshSoon() { if (refreshQueued) return; refreshQueued = true; requestAnimationFrame(() => { refreshQueued = false; try { refresh(); } catch (e) { /* the page is still loading */ } }); }
+  // A short timer rather than requestAnimationFrame, which browsers pause in background windows.
+  function refreshSoon() { if (refreshQueued) return; refreshQueued = true; setTimeout(() => { refreshQueued = false; try { refresh(); } catch (e) { /* the page is still loading */ } }, 16); }
   ['component:toggled', 'component:update', 'rte:enable', 'rte:disable', 'load'].forEach((ev) => editor.on(ev, refreshSoon));
 
   // ---- Status bar: element path, word count, zoom ----
@@ -1769,6 +2044,22 @@ h2{font-size:32px;margin:0 0 24px}
   const field = (label, input) => mk('label', { className: 'dlg-field' }, mk('span', { textContent: label }), input);
 
   // =====================================================================
+  // SiteCraft's own API, used by the ribbon and the feature modules in js/
+  // =====================================================================
+  function exposeApi() {
+    window.SC = {
+      editor, settings, DEVICES, DOCTYPES, INSERTS, TYPES, actions: ACTIONS, refreshHooks, exportHooks, importHooks, menus,
+      toast, ask, dialog, field, mk, esc, buildList, closeMenus, fdoc, fwin, editing, target, texty, needTarget, stopEditing, keepEditing,
+      insertBlock, tableHtml, tableCtx, withTable, addRow, addCol, delRow, delCol, delTable, parseHtmlFile, setStyle, setTextType, align, moveSel, cutElement,
+      popover, closePop, colorPop, symbolPop, tablePop, tableDialog, linkDialog, insertImageFile, imageUrlDialog, insertToc,
+      openFind, smartTypography, clearFormatting, togglePainter, editHtmlDialog, openCodeDialog, printPage, toggleFullScreen,
+      togglePreview, toggleCode, setZoom, zoomStep, toggleUi, getUi: () => ui, setDevice, getDevice: () => devSel.value, isSideways: () => sideways,
+      setTheme, getTheme, showTab, refreshSoon, countSoon, saveSettings, fullHtml, pageMeta, loadPage, setDirty, setDocName, getDocName: () => docName,
+      newBlank, newStarter, openFile, save, closeFile, clearPage, copyHtml, starter, starterCss, blankCss, outlineBtn, isPreviewing,
+    };
+  }
+
+  // =====================================================================
   // Menu bar
   // =====================================================================
   const sel = () => !!editor.getSelected();
@@ -1810,9 +2101,11 @@ h2{font-size:32px;margin:0 0 24px}
     ]],
     ['View', [
       { heading: 'Preview size' },
-      { label: 'Desktop', run: () => setDevice('Desktop'), checked: () => editor.getDevice() === 'Desktop' },
-      { label: 'Tablet', run: () => setDevice('Tablet'), checked: () => editor.getDevice() === 'Tablet' },
-      { label: 'Phone', run: () => setDevice('Mobile'), checked: () => editor.getDevice() === 'Mobile' },
+      { label: 'Computer (fit the window)', run: () => setDevice('Desktop'), checked: () => devSel.value === 'Desktop' },
+      { label: 'Tablet', run: () => setDevice('Tablet'), checked: () => devSel.value === 'Tablet' },
+      { label: 'Phone', run: () => setDevice('Mobile'), checked: () => devSel.value === 'Mobile' },
+      { label: 'More sizes… (the list at the top)', run: () => devSel.focus() },
+      { label: 'Turn sideways', run: () => document.getElementById('rotate').click(), checked: () => sideways },
       '-',
       { label: 'Element outlines', run: () => outlineBtn.click(), checked: () => outlineBtn.getAttribute('aria-pressed') === 'true' },
       { label: 'Preview', run: togglePreview, checked: isPreviewing },
@@ -1825,7 +2118,7 @@ h2{font-size:32px;margin:0 0 24px}
       { label: 'Actual size (100%)', run: () => setZoom(100), checked: () => zoom === 100 },
       '-',
       { heading: 'Show' },
-      { label: 'Formatting toolbar', run: () => toggleUi('fmtbar'), checked: () => ui.fmtbar },
+      { label: 'Ribbon', run: () => toggleUi('fmtbar'), checked: () => ui.fmtbar },
       { label: 'Status bar', run: () => toggleUi('statusbar'), checked: () => ui.statusbar },
       { label: 'Check spelling as you type', run: () => toggleUi('spell'), checked: () => ui.spell },
       '-',
@@ -1997,6 +2290,9 @@ h2{font-size:32px;margin:0 0 24px}
   km.add('sc:save', '⌘+s, ctrl+s', () => save(false), { prevent: true });
   km.add('sc:save-as', '⌘+shift+s, ctrl+shift+s', () => save(true), { prevent: true });
 
+  exposeApi();
+  window.dispatchEvent(new Event('sitecraft:ready'));
+
   window.addEventListener('beforeunload', (e) => { if (dirty && !inFrame) { e.preventDefault(); e.returnValue = ''; } });
 
   // ---- Status + toast ----
@@ -2013,3 +2309,8 @@ h2{font-size:32px;margin:0 0 24px}
   }
 })();
 </script>
+<script src="js/sc-features.js"></script>
+<script src="js/sc-pages.js"></script>
+<script src="js/sc-quick.js"></script>
+<script src="js/sc-hotspots.js"></script>
+<script src="js/sc-ribbon.js"></script>

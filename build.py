@@ -37,6 +37,13 @@ standalone = (
     + body.replace(CDN, LOCAL) + '</body>\n</html>\n'
 )
 (root / "index.html").write_text(standalone, encoding="utf-8")
+# The single-file artifact gets the feature modules inline; index.html keeps loading them from js/.
+def inline_modules(html):
+    for js in re.findall(r'<script src="(js/[\w-]+\.js)"></script>', html):
+        code = (root / js).read_text(encoding="utf-8").replace("</script", "<\\/script")
+        html = html.replace(f'<script src="{js}"></script>', "<script>\n" + code + "\n</script>")
+    return html
+page = inline_modules(page)
 (root / "dist").mkdir(exist_ok=True)
 (root / "dist" / "artifact.html").write_text(page, encoding="utf-8")
 print("Built index.html (offline) and dist/artifact.html")
