@@ -3344,7 +3344,45 @@ h2{font-size:32px;margin:0 0 24px}
   SHAPES.filter(([t]) => t !== 'line').forEach(([t]) => { A['ins-shape-' + t] = () => SC.insertBlock(shapeHtml(t)); });
   A['ins-shape-rounded'] = () => SC.insertBlock(shapeHtml('rounded'));
   A['ins-textbox'] = () => SC.insertBlock('<div class="sc-textbox" style="border:1px solid #555555;border-radius:0;padding:16px;background-color:#ffffff;max-width:380px;margin:16px auto;line-height:1.5">Type here. Words wrap inside the box. Change its border, background, corners, padding and shadow in Quick styles.</div>');
-  Object.assign(SC, { SHAPES, shapePath, isShape, readShape, setShape });
+  // ---- Curved text: words along a circle (SVG textPath), the same idea as curved text in the other Craft apps.
+  // Model in data-curve: { text, dir 'up' | 'down', r (px), rot (degrees), span (degrees, 0 = natural), font, size (px), bold, italic, color, spacing (1/1000 em) }.
+  const CURVE_FONTS = ['Arial', 'Georgia', 'Times New Roman', 'Verdana', 'Trebuchet MS', 'Tahoma', 'Courier New', 'Impact', 'Comic Sans MS', 'Palatino Linotype', 'Segoe UI'];
+  const escA = (v) => String(v).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  function curveHtml(m) {
+    const r = Math.max(20, m.r), size = Math.round(2 * (r + m.size * 1.4)), c = size / 2, id = 'scc' + Math.random().toString(36).slice(2, 8);
+    const sweep = m.dir === 'down' ? 0 : 1;
+    const d = `M${c - r} ${c}A${r} ${r} 0 1 ${sweep} ${c + r} ${c}A${r} ${r} 0 1 ${sweep} ${c - r} ${c}`;
+    const len = m.span > 0 ? ` textLength="${((m.span / 360) * 2 * Math.PI * r).toFixed(1)}" lengthAdjust="spacing"` : '';
+    const font = `font-family="${escA(m.font)}" font-size="${m.size}" font-weight="${m.bold ? 'bold' : 'normal'}" font-style="${m.italic ? 'italic' : 'normal'}" fill="${escA(m.color)}" letter-spacing="${((m.spacing || 0) / 1000) * m.size}"`;
+    return `<svg class="sc-curve" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" data-curve="${escA(JSON.stringify(m))}" role="img" aria-label="${escA(m.text)}" style="display:block;margin:16px auto;max-width:100%;overflow:visible">`
+      + `<defs><path id="${id}" d="${d}"/></defs><g transform="rotate(${m.rot || 0} ${c} ${c})"><text ${font}><textPath href="#${id}" startOffset="25%" text-anchor="middle"${len}>${escA(m.text)}</textPath></text></g></svg>`;
+  }
+  const isCurve = (c) => !!c && c.getClasses().includes('sc-curve');
+  function readCurve(c) { try { return JSON.parse(c.getAttributes()['data-curve']); } catch (e) { return null; } }
+  function setCurve(c, patch) {
+    const m = { ...readCurve(c), ...patch };
+    const added = c.replaceWith(curveHtml(m)), n = [].concat(added)[0];
+    if (n) SC.editor.select(n);
+    return n;
+  }
+  // Type the words in a window first, then OK: the curve is built once.
+  function curveDialog(start, done) {
+    const words = SC.mk('input', { type: 'text', value: start.text || '', placeholder: 'The words to curve' });
+    let dir = start.dir || 'up';
+    const segB = (d, label) => SC.mk('button', { type: 'button', className: 'btn', textContent: label, onclick: (e) => { dir = d; e.target.parentNode.querySelectorAll('button').forEach((b) => b.classList.toggle('primary', b === e.target)); } });
+    const seg = SC.mk('div', { style: 'display:flex;gap:6px' }, segB('up', '◠ Curve up'), segB('down', '◡ Curve down'));
+    seg.querySelectorAll('button')[dir === 'down' ? 1 : 0].classList.add('primary');
+    SC.dialog({ title: start.text ? 'Edit curved text' : 'Curved text', body: [SC.field('Words', words), SC.field('Curve', seg)],
+      actions: [{ label: 'Cancel' }, { label: 'OK', primary: true, run: () => { if (!words.value.trim()) { SC.toast('Type the words first.'); return false; } done({ text: words.value.trim(), dir }); } }] });
+    setTimeout(() => { words.focus(); words.select(); }, 30);
+  }
+  // Double-click curved text on the page to change its words.
+  const onDbl = (e) => { const el = e.target.closest && e.target.closest('svg.sc-curve'); if (!el) return; const c = SC.editor.getSelected(); if (isCurve(c)) curveDialog(readCurve(c), (r) => setCurve(c, r)); };
+  const hook = (doc) => { if (doc && !doc.__scCurve) { doc.__scCurve = true; doc.addEventListener('dblclick', onDbl); } };
+  hook(SC.fdoc && SC.fdoc());
+  SC.editor.on('canvas:frame:load', ({ window: w }) => hook(w && w.document));
+  A['ins-curve'] = () => curveDialog({}, (r) => SC.insertBlock(curveHtml({ text: r.text, dir: r.dir, r: 120, rot: 0, span: 0, font: 'Arial', size: 28, bold: true, italic: false, color: '#c2185b', spacing: 80 })));
+  Object.assign(SC, { SHAPES, shapePath, isShape, readShape, setShape, CURVE_FONTS, isCurve, readCurve, setCurve, curveDialog });
 })();
 
 </script>
@@ -3573,7 +3611,9 @@ h2{font-size:32px;margin:0 0 24px}
         classes),
       actionsFor(kind, c),
       SC.isShape && SC.isShape(c) ? shapeFor(c) : null,
-      kind === 'page' || (SC.isShape && SC.isShape(c)) ? null : boxFor(c),
+      SC.isCurve && SC.isCurve(c) ? curveFor(c) : null,
+      kind === 'page' || (SC.isShape && SC.isShape(c)) || (SC.isCurve && SC.isCurve(c)) ? null : boxFor(c),
+      kind === 'page' || (SC.isCurve && SC.isCurve(c)) ? null : rotateFor(c),
       kind === 'page' ? null : opacityFor(c),
       kind === 'page' ? null : shadowFor(c),
       looksFor(kind, c)));
@@ -3616,6 +3656,35 @@ h2{font-size:32px;margin:0 0 24px}
       row(lab('Border width (px)', numIn(bw, (v) => { border(v, bc, bs); render(); })), lab('Border colour', colorIn(bc, (v) => { border(bw || 1, v, bs); render(); }))),
       row(lab('Border style', style), lab('Padding (px)', numIn(parseFloat(st.padding) || 0, (v) => { if (v) c.addStyle({ padding: v + 'px' }); else c.removeStyle('padding'); }))),
       mk('label', { style: 'display:grid;gap:3px;font-size:12px;color:var(--muted)' }, mk('span', {}, 'Corners, sharp to round: ', rv), rr));
+  }
+  // Curved text: the words, which way it curves, the circle, rotation, spread and the letters.
+  function curveFor(c) {
+    const m = SC.readCurve(c) || {}, set = (patch) => { const n = SC.setCurve(c, patch); if (n) render(); };
+    const words = mk('input', { className: 'qs-add', value: m.text || '', style: 'width:100%' }); words.addEventListener('change', () => set({ text: words.value.trim() || ' ' }));
+    const seg = mk('div', { style: 'display:flex;gap:6px' }, ...[['up', '◠ Curve up'], ['down', '◡ Curve down']].map(([d, n]) => mk('button', { type: 'button', className: 'btn' + ((m.dir || 'up') === d ? ' primary' : ''), textContent: n, onclick: () => set({ dir: d }) })));
+    const slider = (label, key, min, max, fmt) => { const [v, r] = rangeIn(m[key] || 0, max, () => {}, fmt); r.min = String(min); r.value = String(m[key] || 0); r.addEventListener('change', () => set({ [key]: +r.value })); return mk('label', { style: 'display:grid;gap:3px;font-size:12px;color:var(--muted)' }, mk('span', {}, label + ': ', v), r); };
+    const font = mk('select', { className: 'qs-add', style: 'width:100%' }, ...SC.CURVE_FONTS.map((f) => mk('option', { value: f, textContent: f, selected: f === m.font })));
+    font.addEventListener('change', () => set({ font: font.value }));
+    const ang = numIn(m.rot || 0, (v) => set({ rot: ((v + 180) % 360 + 360) % 360 - 180 })); ang.min = '-180'; ang.max = '180';
+    return mk('div', {}, mk('h4', { textContent: 'Curved text' }),
+      lab('Words (press Enter to apply)', words), mk('button', { type: 'button', className: 'btn', textContent: 'Edit words…', onclick: () => SC.curveDialog(m, (r) => set(r)) }),
+      seg,
+      slider('Size of the circle', 'r', 30, 500, (v) => v + 'px'),
+      slider('Rotation', 'rot', -180, 180, (v) => v + '°'), lab('Rotation angle (°)', ang),
+      slider('Spread around the circle', 'span', 0, 360, (v) => (v ? v + '°' : 'natural')),
+      row(lab('Font', font), lab('Size (px)', numIn(m.size || 28, (v) => set({ size: Math.max(6, v) })))),
+      row(lab('Colour', colorIn(m.color, (v) => set({ color: v }))), mk('div', { style: 'display:flex;gap:4px' },
+        mk('button', { type: 'button', className: 'btn' + (m.bold ? ' primary' : ''), innerHTML: '<b>B</b>', title: 'Bold', onclick: () => set({ bold: !m.bold }) }),
+        mk('button', { type: 'button', className: 'btn' + (m.italic ? ' primary' : ''), innerHTML: '<i>I</i>', title: 'Italic', onclick: () => set({ italic: !m.italic }) }))),
+      slider('Letter spacing', 'spacing', -100, 600, (v) => String(v)));
+  }
+  // Rotation for any element: an angle in degrees (CSS transform).
+  function rotateFor(c) {
+    const cur = parseFloat(((c.getStyle() || {}).transform || '').replace(/^rotate\(/, '')) || 0;
+    const apply = (v) => { v = ((v + 180) % 360 + 360) % 360 - 180; if (v) c.addStyle({ transform: `rotate(${v}deg)` }); else c.removeStyle('transform'); };
+    const [v, r] = rangeIn(cur, 180, (x) => { apply(x); n.value = String(x); }, (x) => x + '°'); r.min = '-180'; r.value = String(cur);
+    const n = numIn(cur, (x) => { apply(x); render(); }); n.min = '-180'; n.max = '180';
+    return mk('div', {}, mk('h4', { textContent: 'Rotation' }), row(mk('label', { style: 'display:grid;gap:3px;font-size:12px;color:var(--muted)' }, mk('span', {}, 'Angle: ', v), r), lab('Angle (°)', n)));
   }
   // Drop shadow for any element: it follows the shape, the box or the letters.
   function shadowFor(c) {
@@ -4538,6 +4607,7 @@ button.ctb-chip:hover { background: rgba(255,255,255,.3); }
 
   // ---- Icons (24 × 24, drawn with the tab's color; .fill parts are tinted) ----
   const I = {
+    curve: '<path d="M4 17a8 8 0 0 1 16 0" class="fill"/><path d="M4 17a8 8 0 0 1 16 0M7.2 10.6 6 9.2M12 9V7M16.8 10.6 18 9.2"/>',
     textbox: '<rect x="3" y="4" width="18" height="16" rx="1.5" class="fill"/><path d="M7 9h10M7 12.5h10M7 16h6"/>',
     sh_rect: '<path d="M0 0L18 0L18 16L0 16Z" transform="translate(3 4)" class="fill"/>',
     sh_rounded: '<path d="M0 2.4Q0 0 2.4 0L15.6 0Q18 0 18 2.4L18 13.6Q18 16 15.6 16L2.4 16Q0 16 0 13.6Z" transform="translate(3 4)" class="fill"/>',
@@ -4705,7 +4775,7 @@ button.ctb-chip:hover { background: rgba(255,255,255,.3); }
       ['Pictures and media', [big('picture', 'Picture', 'picture', 'A picture from this computer'), col(small('picture-url', 'Online picture', 'web', 'A picture from a web address'), small('video', 'Video', 'video', 'A video (YouTube, Vimeo or a file)'), small('map', 'Map', 'map', 'A Google map'))]],
       ['Elements', [big('html-element', 'HTML element', 'tag', 'Any HTML element, from a searchable list'), col(small('ins-section', 'Section', 'section'), small('ins-cols2', '2 columns', 'cols2'), small('ins-cols3', '3 columns', 'cols3')), col(small('ins-button', 'Button', 'button'), small('ins-divider', 'Divider line', 'divider'), small('ins-details', 'Collapsible', 'details'))]],
       ['Text', [col(small('ins-heading', 'Heading', 'heading'), small('ins-paragraph', 'Paragraph', 'para'), small('ins-quote', 'Quote', 'quote')), col(small('ins-bullets', 'Bulleted list', 'bullets'), small('ins-numbers', 'Numbered list', 'numbers'), small('ins-code', 'Code block', 'code')), col(small('toc', 'Contents list', 'toc', 'A table of contents from your headings'), small('symbol', 'Symbol', 'symbol', 'Symbols and emoji'))]],
-      ['Shapes', [big('ins-textbox', 'Text box', 'textbox', 'Words in a box that wrap, with a border, background, corners, padding and shadow'), col(small('ins-shape-rect', 'Box', 'sh_rect', 'Box with words inside; corners from sharp to round in Quick styles'), small('ins-shape-rounded', 'Rounded box', 'sh_rounded', 'Rounded box with words inside; corners from sharp to round in Quick styles'), small('ins-shape-ellipse', 'Circle', 'sh_ellipse', 'Circle with words inside; corners from sharp to round in Quick styles')), col(small('ins-shape-triangle', 'Triangle', 'sh_triangle', 'Triangle with words inside; corners from sharp to round in Quick styles'), small('ins-shape-diamond', 'Diamond', 'sh_diamond', 'Diamond with words inside; corners from sharp to round in Quick styles'), small('ins-shape-pentagon', 'Pentagon', 'sh_pentagon', 'Pentagon with words inside; corners from sharp to round in Quick styles')), col(small('ins-shape-hexagon', 'Hexagon', 'sh_hexagon', 'Hexagon with words inside; corners from sharp to round in Quick styles'), small('ins-shape-octagon', 'Octagon', 'sh_octagon', 'Octagon with words inside; corners from sharp to round in Quick styles'), small('ins-shape-star', 'Star', 'sh_star', 'Star with words inside; corners from sharp to round in Quick styles')), col(small('ins-shape-arrow', 'Arrow', 'sh_arrow', 'Arrow with words inside; corners from sharp to round in Quick styles'))]],
+      ['Shapes', [big('ins-textbox', 'Text box', 'textbox', 'Words in a box that wrap, with a border, background, corners, padding and shadow'), col(small('ins-shape-rect', 'Box', 'sh_rect', 'Box with words inside; corners from sharp to round in Quick styles'), small('ins-shape-rounded', 'Rounded box', 'sh_rounded', 'Rounded box with words inside; corners from sharp to round in Quick styles'), small('ins-shape-ellipse', 'Circle', 'sh_ellipse', 'Circle with words inside; corners from sharp to round in Quick styles')), col(small('ins-shape-triangle', 'Triangle', 'sh_triangle', 'Triangle with words inside; corners from sharp to round in Quick styles'), small('ins-shape-diamond', 'Diamond', 'sh_diamond', 'Diamond with words inside; corners from sharp to round in Quick styles'), small('ins-shape-pentagon', 'Pentagon', 'sh_pentagon', 'Pentagon with words inside; corners from sharp to round in Quick styles')), col(small('ins-shape-hexagon', 'Hexagon', 'sh_hexagon', 'Hexagon with words inside; corners from sharp to round in Quick styles'), small('ins-shape-octagon', 'Octagon', 'sh_octagon', 'Octagon with words inside; corners from sharp to round in Quick styles'), small('ins-shape-star', 'Star', 'sh_star', 'Star with words inside; corners from sharp to round in Quick styles')), col(small('ins-curve', 'Curved text', 'curve', 'Words along a circle: type them, choose up or down, then OK'), small('ins-shape-arrow', 'Arrow', 'sh_arrow', 'Arrow with words inside; corners from sharp to round in Quick styles'))]],
       ['Links', [col(small('link', 'Link', 'link', 'Link the selected words (Ctrl+K)'), small('bookmark', 'Bookmark', 'bookmark', 'Name a place on the page to link to'))]],
       ['Interactive', [big('hotspots', 'Picture hotspots', 'hotspot', 'Draw areas on a picture that react to hovering and clicking'), big('widgets', 'Widgets', 'widget', 'Sliders, tabs, pop-ups, countdowns and more'), big('embed', 'Embed', 'embed', 'Show another web page inside this one')]],
     ] },

@@ -74,5 +74,43 @@
   SHAPES.filter(([t]) => t !== 'line').forEach(([t]) => { A['ins-shape-' + t] = () => SC.insertBlock(shapeHtml(t)); });
   A['ins-shape-rounded'] = () => SC.insertBlock(shapeHtml('rounded'));
   A['ins-textbox'] = () => SC.insertBlock('<div class="sc-textbox" style="border:1px solid #555555;border-radius:0;padding:16px;background-color:#ffffff;max-width:380px;margin:16px auto;line-height:1.5">Type here. Words wrap inside the box. Change its border, background, corners, padding and shadow in Quick styles.</div>');
-  Object.assign(SC, { SHAPES, shapePath, isShape, readShape, setShape });
+  // ---- Curved text: words along a circle (SVG textPath), the same idea as curved text in the other Craft apps.
+  // Model in data-curve: { text, dir 'up' | 'down', r (px), rot (degrees), span (degrees, 0 = natural), font, size (px), bold, italic, color, spacing (1/1000 em) }.
+  const CURVE_FONTS = ['Arial', 'Georgia', 'Times New Roman', 'Verdana', 'Trebuchet MS', 'Tahoma', 'Courier New', 'Impact', 'Comic Sans MS', 'Palatino Linotype', 'Segoe UI'];
+  const escA = (v) => String(v).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  function curveHtml(m) {
+    const r = Math.max(20, m.r), size = Math.round(2 * (r + m.size * 1.4)), c = size / 2, id = 'scc' + Math.random().toString(36).slice(2, 8);
+    const sweep = m.dir === 'down' ? 0 : 1;
+    const d = `M${c - r} ${c}A${r} ${r} 0 1 ${sweep} ${c + r} ${c}A${r} ${r} 0 1 ${sweep} ${c - r} ${c}`;
+    const len = m.span > 0 ? ` textLength="${((m.span / 360) * 2 * Math.PI * r).toFixed(1)}" lengthAdjust="spacing"` : '';
+    const font = `font-family="${escA(m.font)}" font-size="${m.size}" font-weight="${m.bold ? 'bold' : 'normal'}" font-style="${m.italic ? 'italic' : 'normal'}" fill="${escA(m.color)}" letter-spacing="${((m.spacing || 0) / 1000) * m.size}"`;
+    return `<svg class="sc-curve" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" data-curve="${escA(JSON.stringify(m))}" role="img" aria-label="${escA(m.text)}" style="display:block;margin:16px auto;max-width:100%;overflow:visible">`
+      + `<defs><path id="${id}" d="${d}"/></defs><g transform="rotate(${m.rot || 0} ${c} ${c})"><text ${font}><textPath href="#${id}" startOffset="25%" text-anchor="middle"${len}>${escA(m.text)}</textPath></text></g></svg>`;
+  }
+  const isCurve = (c) => !!c && c.getClasses().includes('sc-curve');
+  function readCurve(c) { try { return JSON.parse(c.getAttributes()['data-curve']); } catch (e) { return null; } }
+  function setCurve(c, patch) {
+    const m = { ...readCurve(c), ...patch };
+    const added = c.replaceWith(curveHtml(m)), n = [].concat(added)[0];
+    if (n) SC.editor.select(n);
+    return n;
+  }
+  // Type the words in a window first, then OK: the curve is built once.
+  function curveDialog(start, done) {
+    const words = SC.mk('input', { type: 'text', value: start.text || '', placeholder: 'The words to curve' });
+    let dir = start.dir || 'up';
+    const segB = (d, label) => SC.mk('button', { type: 'button', className: 'btn', textContent: label, onclick: (e) => { dir = d; e.target.parentNode.querySelectorAll('button').forEach((b) => b.classList.toggle('primary', b === e.target)); } });
+    const seg = SC.mk('div', { style: 'display:flex;gap:6px' }, segB('up', '◠ Curve up'), segB('down', '◡ Curve down'));
+    seg.querySelectorAll('button')[dir === 'down' ? 1 : 0].classList.add('primary');
+    SC.dialog({ title: start.text ? 'Edit curved text' : 'Curved text', body: [SC.field('Words', words), SC.field('Curve', seg)],
+      actions: [{ label: 'Cancel' }, { label: 'OK', primary: true, run: () => { if (!words.value.trim()) { SC.toast('Type the words first.'); return false; } done({ text: words.value.trim(), dir }); } }] });
+    setTimeout(() => { words.focus(); words.select(); }, 30);
+  }
+  // Double-click curved text on the page to change its words.
+  const onDbl = (e) => { const el = e.target.closest && e.target.closest('svg.sc-curve'); if (!el) return; const c = SC.editor.getSelected(); if (isCurve(c)) curveDialog(readCurve(c), (r) => setCurve(c, r)); };
+  const hook = (doc) => { if (doc && !doc.__scCurve) { doc.__scCurve = true; doc.addEventListener('dblclick', onDbl); } };
+  hook(SC.fdoc && SC.fdoc());
+  SC.editor.on('canvas:frame:load', ({ window: w }) => hook(w && w.document));
+  A['ins-curve'] = () => curveDialog({}, (r) => SC.insertBlock(curveHtml({ text: r.text, dir: r.dir, r: 120, rot: 0, span: 0, font: 'Arial', size: 28, bold: true, italic: false, color: '#c2185b', spacing: 80 })));
+  Object.assign(SC, { SHAPES, shapePath, isShape, readShape, setShape, CURVE_FONTS, isCurve, readCurve, setCurve, curveDialog });
 })();

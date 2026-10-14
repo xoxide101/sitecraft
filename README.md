@@ -196,6 +196,13 @@ This writes:
 
 Chrome or Edge (recent versions) for everything, including saving straight into files and folders. Firefox and Safari work too, but download files instead.
 
+## Objects and text (the same in every Craft app)
+
+- **Shapes** (Insert › Shapes): box, rounded box, circle, triangle, diamond, pentagon, hexagon, octagon, star and arrow, with **corners from sharp to round** and **words inside** you edit like any text.
+- **Curved text** (Insert › Shapes › Curved text): type the words in a small window, choose curve up or down, then OK. Change the circle, the **rotation angle**, spread, font, size and colour in Quick styles; double-click it to change the words. It is real SVG text, sharp at any size.
+- **Text box** and a **Box look** for any element: background, border, corners from sharp to round, and padding.
+- **Rotation angle**, **opacity** and **drop shadow** for any element, in Quick styles.
+
 ## How this was made
 
 This app is **vibe coded**: its author designed and directed it in plain conversation, feature by feature, and an AI coding assistant (Claude, by Anthropic) wrote the code.

@@ -103,3 +103,5 @@ Ribbon buttons reuse the apps' own menu commands (looked up by label), so a butt
 - One-click publishing to a web host.
 - Image editing (crop, rotate).
 - Undo for page-level settings (theme, libraries).
+
+**2026-10-14:** Shapes (`.sc-shape`, SVG background from `shapePath`), curved text (`svg.sc-curve` with textPath, model in `data-curve`), Box look, rotation, opacity and drop shadow in Quick styles.

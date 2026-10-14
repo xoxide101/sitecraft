@@ -222,7 +222,9 @@
         classes),
       actionsFor(kind, c),
       SC.isShape && SC.isShape(c) ? shapeFor(c) : null,
-      kind === 'page' || (SC.isShape && SC.isShape(c)) ? null : boxFor(c),
+      SC.isCurve && SC.isCurve(c) ? curveFor(c) : null,
+      kind === 'page' || (SC.isShape && SC.isShape(c)) || (SC.isCurve && SC.isCurve(c)) ? null : boxFor(c),
+      kind === 'page' || (SC.isCurve && SC.isCurve(c)) ? null : rotateFor(c),
       kind === 'page' ? null : opacityFor(c),
       kind === 'page' ? null : shadowFor(c),
       looksFor(kind, c)));
@@ -265,6 +267,35 @@
       row(lab('Border width (px)', numIn(bw, (v) => { border(v, bc, bs); render(); })), lab('Border colour', colorIn(bc, (v) => { border(bw || 1, v, bs); render(); }))),
       row(lab('Border style', style), lab('Padding (px)', numIn(parseFloat(st.padding) || 0, (v) => { if (v) c.addStyle({ padding: v + 'px' }); else c.removeStyle('padding'); }))),
       mk('label', { style: 'display:grid;gap:3px;font-size:12px;color:var(--muted)' }, mk('span', {}, 'Corners, sharp to round: ', rv), rr));
+  }
+  // Curved text: the words, which way it curves, the circle, rotation, spread and the letters.
+  function curveFor(c) {
+    const m = SC.readCurve(c) || {}, set = (patch) => { const n = SC.setCurve(c, patch); if (n) render(); };
+    const words = mk('input', { className: 'qs-add', value: m.text || '', style: 'width:100%' }); words.addEventListener('change', () => set({ text: words.value.trim() || ' ' }));
+    const seg = mk('div', { style: 'display:flex;gap:6px' }, ...[['up', '◠ Curve up'], ['down', '◡ Curve down']].map(([d, n]) => mk('button', { type: 'button', className: 'btn' + ((m.dir || 'up') === d ? ' primary' : ''), textContent: n, onclick: () => set({ dir: d }) })));
+    const slider = (label, key, min, max, fmt) => { const [v, r] = rangeIn(m[key] || 0, max, () => {}, fmt); r.min = String(min); r.value = String(m[key] || 0); r.addEventListener('change', () => set({ [key]: +r.value })); return mk('label', { style: 'display:grid;gap:3px;font-size:12px;color:var(--muted)' }, mk('span', {}, label + ': ', v), r); };
+    const font = mk('select', { className: 'qs-add', style: 'width:100%' }, ...SC.CURVE_FONTS.map((f) => mk('option', { value: f, textContent: f, selected: f === m.font })));
+    font.addEventListener('change', () => set({ font: font.value }));
+    const ang = numIn(m.rot || 0, (v) => set({ rot: ((v + 180) % 360 + 360) % 360 - 180 })); ang.min = '-180'; ang.max = '180';
+    return mk('div', {}, mk('h4', { textContent: 'Curved text' }),
+      lab('Words (press Enter to apply)', words), mk('button', { type: 'button', className: 'btn', textContent: 'Edit words…', onclick: () => SC.curveDialog(m, (r) => set(r)) }),
+      seg,
+      slider('Size of the circle', 'r', 30, 500, (v) => v + 'px'),
+      slider('Rotation', 'rot', -180, 180, (v) => v + '°'), lab('Rotation angle (°)', ang),
+      slider('Spread around the circle', 'span', 0, 360, (v) => (v ? v + '°' : 'natural')),
+      row(lab('Font', font), lab('Size (px)', numIn(m.size || 28, (v) => set({ size: Math.max(6, v) })))),
+      row(lab('Colour', colorIn(m.color, (v) => set({ color: v }))), mk('div', { style: 'display:flex;gap:4px' },
+        mk('button', { type: 'button', className: 'btn' + (m.bold ? ' primary' : ''), innerHTML: '<b>B</b>', title: 'Bold', onclick: () => set({ bold: !m.bold }) }),
+        mk('button', { type: 'button', className: 'btn' + (m.italic ? ' primary' : ''), innerHTML: '<i>I</i>', title: 'Italic', onclick: () => set({ italic: !m.italic }) }))),
+      slider('Letter spacing', 'spacing', -100, 600, (v) => String(v)));
+  }
+  // Rotation for any element: an angle in degrees (CSS transform).
+  function rotateFor(c) {
+    const cur = parseFloat(((c.getStyle() || {}).transform || '').replace(/^rotate\(/, '')) || 0;
+    const apply = (v) => { v = ((v + 180) % 360 + 360) % 360 - 180; if (v) c.addStyle({ transform: `rotate(${v}deg)` }); else c.removeStyle('transform'); };
+    const [v, r] = rangeIn(cur, 180, (x) => { apply(x); n.value = String(x); }, (x) => x + '°'); r.min = '-180'; r.value = String(cur);
+    const n = numIn(cur, (x) => { apply(x); render(); }); n.min = '-180'; n.max = '180';
+    return mk('div', {}, mk('h4', { textContent: 'Rotation' }), row(mk('label', { style: 'display:grid;gap:3px;font-size:12px;color:var(--muted)' }, mk('span', {}, 'Angle: ', v), r), lab('Angle (°)', n)));
   }
   // Drop shadow for any element: it follows the shape, the box or the letters.
   function shadowFor(c) {
