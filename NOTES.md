@@ -109,3 +109,7 @@ Ribbon buttons reuse the apps' own menu commands (looked up by label), so a butt
 **2026-10-14:** Shapes can be 3-D in three colours (face = fill, side = `side`, edge = border) and have one border line or three (`lines`: outer, middle, inner; a middle line with no colour leaves a gap). `shapeLayers()` lists what to draw, back to front; it is the same code in each Craft app.
 
 **2026-10-14:** Dingbats (`DINGBATS`, `DINGBAT_FONT`) and colour fills for see-through pictures (`FILL_MODES`: original, solid, tint, gradient, picture). Pictures are recoloured with a CSS mask (`setImageFill`, model in `data-fx`, the picture pixels moved out of view with `object-position`); the Symbol picker includes the dingbat groups.
+
+## Sliders you can type into
+
+`js/range-type.js` (loaded last) adds a number box beside every `input[type=range]`, including ones built later (a MutationObserver watches the page). Typing fires the same `input` and `change` events as dragging, so panels need no changes. Wrap a slider in `[data-rt-skip]` to leave it alone. Each app has its own copy.

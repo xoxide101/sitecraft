@@ -95,6 +95,8 @@ Click any object to see what it is, its tag and classes (add or remove them), an
 
 **Hover a look to preview it on the page, and click to keep it.** Pick an accent color first to try every look in that color. Ctrl+Z undoes.
 
+- **Every slider has a box beside it** to type the exact value (Enter or Tab to apply).
+
 ## Sites with several pages
 
 - **Pages** panel: add, rename, duplicate and delete pages. The first page is the home page (`index.html`).
