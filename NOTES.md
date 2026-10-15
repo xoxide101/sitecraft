@@ -121,3 +121,8 @@ Dates: `js/sc-shapes.js` has `DATE_FORMATS`, `dateDialog` and the `ins-date` act
 ## Zoom slider
 
 `zoomBar({ get, set, fit, min, max })` (own copy in this app) builds the status-bar zoom: slider positions 0–1000 map to min–100% on the left half and 100%–max on the right, so the middle is always 100% (it snaps there). + and − step through 10, 25, 33, 50, 67, 75, 90, 100, 110, 125, 150… It is marked `data-rt-skip` so the slider-typing helper leaves it alone (it has its own percent box).
+
+## Backgrounds and fills
+
+`js/sc-shapes.js` has the shared fill library (own copy: `PATTERNS`, `patternTile`, `paintSwitch`, `paintPicker`…). `paintCss(paint)` turns a paint into CSS: gradients as `linear-gradient`/`radial-gradient`, patterns as a small PNG tile drawn at 2× with `background-size`, pictures with `background-size` cover/contain/100% 100%/tile and a white veil for "strength". `setPaint(c, paint)` clears the old background properties, adds the new ones and keeps the settings in `data-paint`; `readPaint(c)` reads them back. Shapes keep their fill in `data-shape-paint` and draw it inside the SVG outline (`shapePaintDefs`: an SVG gradient or pattern used as the face fill). Browsers smooth CSS gradients themselves, so SiteCraft has no dither switch.
+

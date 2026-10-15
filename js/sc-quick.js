@@ -225,6 +225,7 @@
       SC.isCurve && SC.isCurve(c) ? curveFor(c) : null,
       kind === 'page' || (SC.isShape && SC.isShape(c)) || (SC.isCurve && SC.isCurve(c)) ? null : boxFor(c),
       kind === 'page' || (SC.isCurve && SC.isCurve(c)) ? null : rotateFor(c),
+      kind === 'image' || (SC.isShape && SC.isShape(c)) || (SC.isCurve && SC.isCurve(c)) ? null : backgroundFor(c, kind),
       kind === 'image' ? imageFillFor(c) : null,
       kind === 'page' ? null : opacityFor(c),
       kind === 'page' ? null : shadowFor(c),
@@ -247,7 +248,7 @@
       lab('Shape', type),
       s.type === 'ellipse' ? null : mk('label', { style: 'display:grid;gap:3px;font-size:12px;color:var(--muted)' }, mk('span', {}, 'Corners, sharp to round: ', rv), rr),
       s.type === 'star' ? lab('Star points', numIn(s.points, (v) => set({ points: Math.max(3, Math.min(24, v)) }))) : null,
-      row(lab('Fill', colorIn(s.fill, (v) => set({ fill: v }))), mk('label', { style: 'font-size:12px' }, noFill, ' No fill')),
+      SC.paintPicker(s.paint && s.paint.type !== 'solid' ? s.paint : s.fill ? { type: 'solid', color: s.fill } : { type: 'none' }, (f) => set(f.type === 'none' ? { fill: '', paint: null } : f.type === 'solid' ? { fill: f.color, paint: null } : { fill: s.fill || f.c1 || f.fg || '#f5c518', paint: f }), { none: 'No fill', label: 'Fill', unit: 'px', dither: false }),
       row(lab('Outline', colorIn(s.stroke, (v) => set({ stroke: v }))), lab('Outline width (px)', numIn(s.sw, (v) => set({ sw: v })))),
       mk('h4', { textContent: 'Border lines' }),
       mk('div', { style: 'display:flex;gap:6px' }, mk('button', { type: 'button', className: 'btn' + (s.lines ? '' : ' primary'), textContent: 'One line', onclick: () => set({ lines: null }) }),
@@ -263,6 +264,12 @@
       s.depth ? lab('Side colour (face = fill, edge = outline)', colorIn(s.side, (v) => set({ side: v }))) : null,
       mk('p', { style: 'font-size:11.5px;color:var(--muted);margin:4px 0 0', textContent: 'Double-click the shape to type the words inside; format them with the text bar.' }));
   }
+  // Background: colour, gradient, pattern (dithers, stripes, dots…) or picture, for the page, sections, text, tables and cells.
+  function backgroundFor(c, kind) {
+    const f = SC.readPaint(c);
+    return mk('div', {}, mk('h4', { textContent: kind === 'page' ? 'Page background' : kind === 'cell' ? 'Cell background' : 'Background' }),
+      SC.paintPicker(f, (n) => { SC.setPaint(c, n); render(); }, { unit: 'px', dither: false, base: '#ffffff' }));
+  }
   // Box look for any element (a text box is a box with words): background, border, corners and padding.
   function boxFor(c) {
     const st = c.getStyle() || {}, el = c.getEl(), size = el ? Math.min(el.offsetWidth, el.offsetHeight) : 100;
@@ -276,7 +283,6 @@
     const style = mk('select', { className: 'qs-add', style: 'width:100%' }, ...[['solid', 'Solid'], ['dashed', 'Dashed'], ['dotted', 'Dotted']].map(([v, n]) => mk('option', { value: v, textContent: n, selected: v === bs })));
     style.addEventListener('change', () => border(bw || 1, bc, style.value));
     return mk('div', {}, mk('h4', { textContent: 'Box look' }),
-      row(lab('Background', colorIn(st['background-color'], (v) => { c.addStyle({ 'background-color': v }); render(); })), mk('label', { style: 'font-size:12px' }, noBg, ' None')),
       row(lab('Border width (px)', numIn(bw, (v) => { border(v, bc, bs); render(); })), lab('Border colour', colorIn(bc, (v) => { border(bw || 1, v, bs); render(); }))),
       row(lab('Border style', style), lab('Padding (px)', numIn(parseFloat(st.padding) || 0, (v) => { if (v) c.addStyle({ padding: v + 'px' }); else c.removeStyle('padding'); }))),
       mk('label', { style: 'display:grid;gap:3px;font-size:12px;color:var(--muted)' }, mk('span', {}, 'Corners, sharp to round: ', rv), rr));
