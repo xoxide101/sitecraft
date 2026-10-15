@@ -53,7 +53,8 @@ Right-click anything on the page for a menu. Double-click a ribbon tab to hide o
   - **Interactive:** **picture hotspots**, **widgets** and embeds.
 - **Design:**
   - **Themes:** Clean, Bakery, Ocean, Forest, Sunset, Candy, Midnight, Newsprint.
-  - **Fonts:** font pairs, smart quotes.
+  - **Symbols and emoji picker** (Insert › Symbols & emoji and the text bar’s symbol button): **Dingbats** has common signs (© ™ ° ½ € …), the classic dingbat groups, every symbol in Noto Sans Symbols 2 (about 2,600, by Unicode block) and the Yarndings knitting symbols; **Emoji** has about 1,900 emoji in their official groups with skin tones, as colour emoji or **one colour** (Noto Emoji, so you can colour and outline it like text). Search both by name; recently used ones stay at the top. In text it goes in at the cursor (in a span with the font it needs); otherwise as a big symbol. Published pages link the symbol fonts they use.
+- **Fonts:** font pairs, smart quotes.
   - **Page:** page color, page width, page properties (title, description, language).
 - **Layout:**
   - **Spacing:** padding, margin, width.
