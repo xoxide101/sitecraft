@@ -393,6 +393,7 @@
     mount: document.querySelector('.app'), toast,
     leftEls: [menusBtn],
     quick: [
+      { icon: 'wand', title: 'Start (wizard)', run: () => SC.openBackstage('home') },
       { icon: 'save', title: 'Save', key: 'Ctrl+S', run: () => SC.save(false) },
       { icon: 'undo', title: 'Undo', key: 'Ctrl+Z', run: () => editor.UndoManager.undo(), disabled: () => !editor.UndoManager.hasUndo() },
       { icon: 'redo', title: 'Redo', key: 'Ctrl+Shift+Z', run: () => editor.UndoManager.redo(), disabled: () => !editor.UndoManager.hasRedo() },

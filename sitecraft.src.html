@@ -284,6 +284,7 @@ button { font: inherit; color: inherit; }
 .bs-main h2 { font-family: var(--font-display); font-size: 17px; margin: 28px 0 12px; }
 .bs-main p.lead { color: var(--muted); margin: 0 0 8px; font-size: 14px; }
 .bs-main .bs-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.bs-main .bs-show { display: flex; align-items: center; gap: 6px; margin-top: 12px; color: var(--muted); font-size: 13px; cursor: pointer; }
 .bs-main .btn { border: 1px solid var(--line); height: 34px; }
 @media (max-width: 720px) { .backstage { grid-template-columns: 1fr; grid-template-rows: auto 1fr; } .bs-nav { flex-direction: row; flex-wrap: wrap; } .bs-main { padding: 20px; } }
 
@@ -455,6 +456,12 @@ button { font: inherit; color: inherit; }
     <div class="rb-tabs" id="rb-tabs" role="tablist" aria-label="Ribbon"></div>
     <div class="rb-body" id="rb-body">
       <div class="rb-panel" data-tab="home" role="tabpanel" aria-label="Home">
+        <div class="rb-group" role="group" aria-label="Start">
+          <div class="rb-group-body">
+            <button class="rb-big" data-act="backstage" title="Start page: what shall we build? Templates, open, save and more"><svg viewBox="0 0 24 24"><path d="m4 20 11-11"/><path d="m13 7 2-2 4 4-2 2Z" class="fill"/><path d="M19 3v3M17.5 4.5h3M7 4v2M6 5h2M19 15v2M18 16h2"/></svg><span>Start</span></button>
+          </div>
+          <div class="rb-label">Start</div>
+        </div>
         <div class="rb-group" role="group" aria-label="Clipboard">
           <div class="rb-group-body">
             <button class="rb-big" data-act="paste-el" title="Paste the copied element after the selected one (Ctrl+V)"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2" class="fill"/><path d="M9 4V3h6v1M9 9h6M9 13h6M9 17h4"/></svg><span>Paste</span></button>

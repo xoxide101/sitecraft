@@ -328,10 +328,15 @@
         mk('button', { className: 'btn', textContent: 'Open a file…', onclick: run(SC.openFile) }),
         mk('button', { className: 'btn', textContent: 'Save', onclick: run(() => SC.save(false)) }),
         mk('button', { className: 'btn', textContent: 'Add a page', onclick: run(A['new-page']) })) : null,
+      view === 'home' ? mk('label', { className: 'bs-show' }, mk('input', { type: 'checkbox', checked: showAtStart(), onchange: (e) => { try { localStorage.setItem(START_KEY, e.target.checked ? '1' : '0'); } catch (err) {} } }), ' Show this when SiteCraft opens') : null,
       mk('h2', { textContent: 'Templates' }));
     main.append(await templateGrid(useTemplate));
     main.querySelector('button')?.focus();
   }
   SC.openBackstage = openBackstage;
   A.backstage = () => openBackstage('home');
+  // The start page greets you when SiteCraft opens (can be turned off on it).
+  const START_KEY = 'sitecraft-start-show';
+  function showAtStart() { try { return localStorage.getItem(START_KEY) !== '0'; } catch (e) { return true; } }
+  if (showAtStart()) setTimeout(() => openBackstage('home'), 0);
 })();

@@ -284,6 +284,7 @@ button { font: inherit; color: inherit; }
 .bs-main h2 { font-family: var(--font-display); font-size: 17px; margin: 28px 0 12px; }
 .bs-main p.lead { color: var(--muted); margin: 0 0 8px; font-size: 14px; }
 .bs-main .bs-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.bs-main .bs-show { display: flex; align-items: center; gap: 6px; margin-top: 12px; color: var(--muted); font-size: 13px; cursor: pointer; }
 .bs-main .btn { border: 1px solid var(--line); height: 34px; }
 @media (max-width: 720px) { .backstage { grid-template-columns: 1fr; grid-template-rows: auto 1fr; } .bs-nav { flex-direction: row; flex-wrap: wrap; } .bs-main { padding: 20px; } }
 
@@ -455,6 +456,12 @@ button { font: inherit; color: inherit; }
     <div class="rb-tabs" id="rb-tabs" role="tablist" aria-label="Ribbon"></div>
     <div class="rb-body" id="rb-body">
       <div class="rb-panel" data-tab="home" role="tabpanel" aria-label="Home">
+        <div class="rb-group" role="group" aria-label="Start">
+          <div class="rb-group-body">
+            <button class="rb-big" data-act="backstage" title="Start page: what shall we build? Templates, open, save and more"><svg viewBox="0 0 24 24"><path d="m4 20 11-11"/><path d="m13 7 2-2 4 4-2 2Z" class="fill"/><path d="M19 3v3M17.5 4.5h3M7 4v2M6 5h2M19 15v2M18 16h2"/></svg><span>Start</span></button>
+          </div>
+          <div class="rb-label">Start</div>
+        </div>
         <div class="rb-group" role="group" aria-label="Clipboard">
           <div class="rb-group-body">
             <button class="rb-big" data-act="paste-el" title="Paste the copied element after the selected one (Ctrl+V)"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2" class="fill"/><path d="M9 4V3h6v1M9 9h6M9 13h6M9 17h4"/></svg><span>Paste</span></button>
@@ -3601,12 +3608,17 @@ function run(){var d=new Date();document.querySelectorAll('[data-widget="date"]'
         mk('button', { className: 'btn', textContent: 'Open a file…', onclick: run(SC.openFile) }),
         mk('button', { className: 'btn', textContent: 'Save', onclick: run(() => SC.save(false)) }),
         mk('button', { className: 'btn', textContent: 'Add a page', onclick: run(A['new-page']) })) : null,
+      view === 'home' ? mk('label', { className: 'bs-show' }, mk('input', { type: 'checkbox', checked: showAtStart(), onchange: (e) => { try { localStorage.setItem(START_KEY, e.target.checked ? '1' : '0'); } catch (err) {} } }), ' Show this when SiteCraft opens') : null,
       mk('h2', { textContent: 'Templates' }));
     main.append(await templateGrid(useTemplate));
     main.querySelector('button')?.focus();
   }
   SC.openBackstage = openBackstage;
   A.backstage = () => openBackstage('home');
+  // The start page greets you when SiteCraft opens (can be turned off on it).
+  const START_KEY = 'sitecraft-start-show';
+  function showAtStart() { try { return localStorage.getItem(START_KEY) !== '0'; } catch (e) { return true; } }
+  if (showAtStart()) setTimeout(() => openBackstage('home'), 0);
 })();
 
 </script>
@@ -4781,6 +4793,7 @@ function run(){var d=new Date();document.querySelectorAll('[data-widget="date"]'
     print: '<path d="M7 9V3h10v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7Z"/>',
     preview: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>',
     export: '<path d="M12 3v12M7 8l5-5 5 5"/><path d="M4 15v5h16v-5"/>',
+    wand: '<path d="m4 20 11-11"/><path d="m13 7 2-2 4 4-2 2Z" class="fill"/><path d="M19 3v3M17.5 4.5h3M7 4v2M6 5h2M19 15v2M18 16h2"/>',
     help: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.5h.01"/>',
     search: '<circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/>',
     check: '<path d="m5 12 4 4 10-10"/>',
@@ -5716,6 +5729,7 @@ button.ctb-chip:hover { background: rgba(255,255,255,.3); }
     mount: document.querySelector('.app'), toast,
     leftEls: [menusBtn],
     quick: [
+      { icon: 'wand', title: 'Start (wizard)', run: () => SC.openBackstage('home') },
       { icon: 'save', title: 'Save', key: 'Ctrl+S', run: () => SC.save(false) },
       { icon: 'undo', title: 'Undo', key: 'Ctrl+Z', run: () => editor.UndoManager.undo(), disabled: () => !editor.UndoManager.hasUndo() },
       { icon: 'redo', title: 'Redo', key: 'Ctrl+Shift+Z', run: () => editor.UndoManager.redo(), disabled: () => !editor.UndoManager.hasRedo() },
