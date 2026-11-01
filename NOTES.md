@@ -135,3 +135,6 @@ Bundled fonts get a `'Family', fallback` CSS stack; the page canvas loads `fonts
 
 `make_symbols.py` (run by `fetch_fonts.py`; needs `pip install fonttools`) writes `fonts/symbols.js` (`window.CRAFT_SYMBOLS`): dingbat sets (common signs and the classic groups shown in Noto Sans Symbols 2, every Noto Sans Symbols 2 character grouped by Unicode block from `Blocks.txt`, and the Yarndings fonts' characters read from their character maps with fontTools) and the emoji from Unicode's `emoji-test.txt` (fully qualified, up to Emoji 15.0 so they show on most computers; skin-tone variants left out and marked on their base emoji). Names come from Unicode for searching. `js/craft-symbols.js` (`window.CraftSymbols`, own copy) is the picker: `open({ onPick })` as a window, `mount(element, { onPick })` in a panel; `onPick` gets `{ char, font, kind }` and `fontFor()` gives the CSS font list. Recently used symbols and the last tab are kept in the browser. Noto Emoji (one-colour emoji) is bundled with the fonts.
 
+## Start (wizard)
+
+The wand in the title bar's quick buttons and the Start button, first on the Home tab, open the File start page (Backstage) with its templates. It now greets you when SiteCraft opens; the tick box on it turns that off (localStorage `sitecraft-start-show`).
