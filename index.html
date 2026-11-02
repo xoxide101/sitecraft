@@ -1714,8 +1714,10 @@ h2{font-size:32px;margin:0 0 24px}
   }
   const imgInput = $('img-input');
   const insertImageFile = () => imgInput.click();
-  imgInput.onchange = () => {
-    [...imgInput.files].forEach((f) => {
+  imgInput.onchange = () => { insertImageFiles([...imgInput.files]); imgInput.value = ''; };
+  // pictures on the page (from this computer, or clip art from the library)
+  function insertImageFiles(files) {
+    files.forEach((f) => {
       const r = new FileReader();
       r.onload = () => {
         editor.AssetManager.add({ src: r.result, name: f.name });
@@ -1723,8 +1725,8 @@ h2{font-size:32px;margin:0 0 24px}
       };
       r.readAsDataURL(f);
     });
-    imgInput.value = '';
-  };
+  }
+  const insertClipart = () => window.CraftClipartPicker && CraftClipartPicker.open({ app: 'SiteCraft', onPick: (p) => insertImageFiles([p.file]) });
   function imageUrlDialog() {
     const url = mk('input', { type: 'text', placeholder: 'https://…/photo.jpg' });
     const alt = mk('input', { type: 'text', placeholder: 'Describe the picture for people who cannot see it' });
@@ -2293,6 +2295,7 @@ h2{font-size:32px;margin:0 0 24px}
       { label: 'Edit HTML…', run: editHtmlDialog, disabled: () => !real },
       { label: 'Insert table…', run: tableDialog },
       { label: 'Insert picture…', run: insertImageFile },
+      { label: 'Clip art from the library…', run: insertClipart },
     ].filter(Boolean);
   }
   function onContextMenu(e) {
@@ -2398,7 +2401,7 @@ h2{font-size:32px;margin:0 0 24px}
       editor, settings, DEVICES, DOCTYPES, INSERTS, TYPES, actions: ACTIONS, refreshHooks, exportHooks, importHooks, menus,
       toast, ask, dialog, field, mk, esc, buildList, closeMenus, fdoc, fwin, editing, target, texty, needTarget, stopEditing, keepEditing,
       insertBlock, tableHtml, tableCtx, withTable, addRow, addCol, delRow, delCol, delTable, parseHtmlFile, setStyle, setTextType, align, moveSel, cutElement,
-      popover, closePop, colorPop, symbolPop, tablePop, tableDialog, linkDialog, insertImageFile, imageUrlDialog, insertToc,
+      popover, closePop, colorPop, symbolPop, tablePop, tableDialog, linkDialog, insertImageFile, insertClipart, imageUrlDialog, insertToc,
       openFind, smartTypography, clearFormatting, togglePainter, editHtmlDialog, openCodeDialog, printPage, toggleFullScreen,
       togglePreview, toggleCode, setZoom, zoomStep, toggleUi, getUi: () => ui, setDevice, getDevice: () => devSel.value, isSideways: () => sideways,
       setTheme, getTheme, showTab, refreshSoon, countSoon, saveSettings, fullHtml, pageMeta, loadPage, setDirty, setDocName, getDocName: () => docName,
@@ -2494,6 +2497,7 @@ h2{font-size:32px;margin:0 0 24px}
       { label: 'Table of contents', run: insertToc },
       '-',
       { label: 'Picture from this computer…', run: insertImageFile },
+      { label: 'Clip art from the library…', run: insertClipart },
       { label: 'Picture from a web address…', run: imageUrlDialog },
       { label: 'Video', run: () => insertBlock({ type: 'video', src: '', style: { width: '100%', height: '320px' } }) },
       { label: 'Map', run: () => insertBlock({ type: 'map', style: { width: '100%', height: '320px' } }) },
@@ -2663,6 +2667,7 @@ h2{font-size:32px;margin:0 0 24px}
 <script src="js/sc-hotspots.js"></script>
 <script src="js/craft-titlebar.js"></script>
 <script src="js/craft-keys.js"></script>
+<script src="js/clipart-picker.js"></script>
 <script src="js/sc-ribbon.js"></script>
 <script src="js/range-type.js"></script>
 </body>
