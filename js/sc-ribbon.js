@@ -26,6 +26,7 @@
     table: '<rect x="3" y="4" width="18" height="16" rx="2" class="fill"/><path d="M3 9h18M3 14h18M9 4v16M15 4v16"/>',
     draw: '<rect x="3" y="4" width="14" height="12" rx="1.5" stroke-dasharray="3 2"/><path d="m14 21 7-7-2-2-7 7-1 3Z" class="fill"/>',
     picture: '<rect x="3" y="5" width="18" height="14" rx="2" class="fill"/><circle cx="9" cy="10" r="1.8"/><path d="m3 17 5-4 4 3 3-2 6 4"/>',
+    barcode: '<path d="M4 5v14M7 5v14M9.5 5v14M13 5v14M15 5v14M18 5v14M20 5v14"/>',
     web: '<circle cx="12" cy="12" r="9" class="fill"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>',
     video: '<rect x="3" y="5" width="18" height="14" rx="2" class="fill"/><path d="m10 9 5 3-5 3Z"/>',
     map: '<path d="M12 21s7-6 7-12a7 7 0 0 0-14 0c0 6 7 12 7 12Z" class="fill"/><circle cx="12" cy="9" r="2.5"/>',
@@ -123,7 +124,7 @@
   Object.assign(A, {
     'table-grid': (b) => SC.tablePop(b),
     'table-dialog': SC.tableDialog,
-    picture: SC.insertImageFile, clipart: SC.insertClipart, 'picture-url': SC.imageUrlDialog,
+    picture: SC.insertImageFile, clipart: SC.insertClipart, barcode: SC.insertBarcode, 'picture-url': SC.imageUrlDialog,
     video: () => SC.insertBlock({ type: 'video', src: '', style: { width: '100%', height: '360px' } }),
     map: () => SC.insertBlock({ type: 'map', style: { width: '100%', height: '320px' } }),
     embed: () => {
@@ -175,7 +176,7 @@
     { id: 'insert', label: 'Insert', groups: [
       ['Pages', [big('new-page', 'New page', 'page', 'Add a page to your site'), col(small('sitenav', 'Site menu', 'nav', 'A menu of all your pages that updates itself'), small('templates', 'Templates', 'template', 'Start from a ready-made design'))]],
       ['Tables', [big('table-grid', 'Table', 'table', 'Pick the size of a new table'), big('draw-table', 'Draw table', 'draw', 'Drag a box on the page to draw a table')]],
-      ['Pictures and media', [big('picture', 'Picture', 'picture', 'A picture from this computer'), col(small('clipart', 'Clip art', 'picture', 'A picture from the clip-art library (ClipArtCraft)'), small('picture-url', 'Online picture', 'web', 'A picture from a web address')), col(small('video', 'Video', 'video', 'A video (YouTube, Vimeo or a file)'), small('map', 'Map', 'map', 'A Google map'))]],
+      ['Pictures and media', [big('picture', 'Picture', 'picture', 'A picture from this computer'), col(small('clipart', 'Clip art', 'picture', 'A picture from the clip-art library (ClipArtCraft)'), small('picture-url', 'Online picture', 'web', 'A picture from a web address'), small('barcode', 'Barcode', 'barcode', 'A barcode or QR code from BarcodeCraft (as SVG, at its real size)')), col(small('video', 'Video', 'video', 'A video (YouTube, Vimeo or a file)'), small('map', 'Map', 'map', 'A Google map'))]],
       ['Elements', [big('html-element', 'HTML element', 'tag', 'Any HTML element, from a searchable list'), col(small('ins-section', 'Section', 'section'), small('ins-cols2', '2 columns', 'cols2'), small('ins-cols3', '3 columns', 'cols3')), col(small('ins-button', 'Button', 'button'), small('ins-divider', 'Divider line', 'divider'), small('ins-details', 'Collapsible', 'details'))]],
       ['Text', [col(small('ins-heading', 'Heading', 'heading'), small('ins-paragraph', 'Paragraph', 'para'), small('ins-quote', 'Quote', 'quote')), col(small('ins-bullets', 'Bulleted list', 'bullets'), small('ins-numbers', 'Numbered list', 'numbers'), small('ins-code', 'Code block', 'code')), col(small('toc', 'Contents list', 'toc', 'A table of contents from your headings'), small('symbol', 'Symbols & emoji', 'symbol', 'Dingbats, knitting symbols and emoji'))]],
       ['Shapes', [big('ins-textbox', 'Text box', 'textbox', 'Words in a box that wrap, with a border, background, corners, padding and shadow'), col(small('ins-shape-rect', 'Box', 'sh_rect', 'Box with words inside; corners from sharp to round in Quick styles'), small('ins-shape-rounded', 'Rounded box', 'sh_rounded', 'Rounded box with words inside; corners from sharp to round in Quick styles'), small('ins-shape-ellipse', 'Circle', 'sh_ellipse', 'Circle with words inside; corners from sharp to round in Quick styles')), col(small('ins-shape-triangle', 'Triangle', 'sh_triangle', 'Triangle with words inside; corners from sharp to round in Quick styles'), small('ins-shape-diamond', 'Diamond', 'sh_diamond', 'Diamond with words inside; corners from sharp to round in Quick styles'), small('ins-shape-pentagon', 'Pentagon', 'sh_pentagon', 'Pentagon with words inside; corners from sharp to round in Quick styles')), col(small('ins-shape-hexagon', 'Hexagon', 'sh_hexagon', 'Hexagon with words inside; corners from sharp to round in Quick styles'), small('ins-shape-octagon', 'Octagon', 'sh_octagon', 'Octagon with words inside; corners from sharp to round in Quick styles'), small('ins-shape-star', 'Star', 'sh_star', 'Star with words inside; corners from sharp to round in Quick styles')), col(small('ins-curve', 'Curved text', 'curve', 'Words along a circle: type them, choose up or down, then OK'), small('ins-shape-arrow', 'Arrow', 'sh_arrow', 'Arrow with words inside; corners from sharp to round in Quick styles'))]],
