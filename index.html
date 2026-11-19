@@ -283,6 +283,7 @@ button { font: inherit; color: inherit; }
 .bs-nav button.bs-item:hover, .bs-nav button.bs-item.on { background: rgba(255,255,255,.18); }
 .bs-nav hr { border: 0; border-top: 1px solid rgba(255,255,255,.25); margin: 8px 4px; width: auto; }
 .bs-main { overflow: auto; padding: 34px 40px 60px; }
+@media (max-width: 700px) { .backstage { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); } .bs-nav { flex-direction: row; overflow-x: auto; padding: 8px; touch-action: pan-x; } .bs-nav hr { display: none; } .bs-nav button.bs-item, .bs-nav .bs-back { flex: none; white-space: nowrap; } .bs-main { padding: 16px 14px 40px; } .statusbar { overflow-x: auto; min-width: 0; scrollbar-width: none; } }
 .bs-main h1 { font-family: var(--font-display); font-size: 30px; margin: 0 0 4px; }
 .bs-main h2 { font-family: var(--font-display); font-size: 17px; margin: 28px 0 12px; }
 .bs-main p.lead { color: var(--muted); margin: 0 0 8px; font-size: 14px; }

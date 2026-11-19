@@ -151,3 +151,7 @@ The wand in the title bar's quick buttons and the Start button, first on the Hom
 
 ## Barcodes (shared)
 Insert › Barcode (ribbon, Insert › Pictures and media) and "Barcode or QR code…" in the Insert and right-click menus open BarcodeCraft's window (`js/craft-barcode.js`, its own copy, with `js/bwip-js-min.js` and `js/qrcode-generator.js`, kept in `js/` so build.py inlines them into the artifact). The barcode goes in as an SVG picture (sharp at any zoom) sized in mm with CSS (`width: 30mm; max-width: 100%`), alt text "QR code: …" and `data-barcode` = its type.
+
+- 2026-11-19 My pictures (clipart-picker.js, the same in every Craft app): a tab of pictures kept for every Craft app: Add a picture file…, or Keep in My pictures on any clip-art picture; kept as data in this browser (IndexedDB craft-pictures) and, logged in, in the account (AccountCraft data 'pictures', a key each), never as files. CraftClipartPicker.keep({ name, file, from }) / mine() / forget(id). The picker fits phones (one column, finger scrolling).
+- 2026-11-19 Phones and tablets: the title bar never makes the page wider than the screen: under 900 px the search box is left out (every command is in the logo menu), the quick buttons give way, under 620 px the AI switch is only in the status bar. The barcode window (craft-barcode.js, now the same in every app, with the QR picture) stacks in one column and scrolls with a finger.
+- 2026-11-19 SiteCraft's File screen in one column on phones; its status bar scrolls sideways.
