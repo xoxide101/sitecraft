@@ -23,7 +23,16 @@
   .chips { display: flex; flex-wrap: wrap; gap: 6px; }
   .chips label { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel-2); cursor: pointer; font-size: 12.5px; }
   .chips input { margin: 0; }
-  .chips .grp { flex-basis: 100%; font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); margin-top: 2px; }
+  .chips .grp { flex-basis: 100%; display: flex; gap: 6px; align-items: center; padding: 2px 0; border: 0; background: none; font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); margin-top: 2px; cursor: pointer; text-align: left; }
+  .chips .grp:hover { color: var(--fg); }
+  .chips .grp .tw { display: inline-block; width: 10px; transition: transform .15s; }
+  .chips .grp.shut .tw { transform: rotate(-90deg); }
+  .chips .grp .n { font-weight: 600; text-transform: none; letter-spacing: 0; }
+  .chips label.hid { display: none; }
+  #devbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  #devbar .sum { color: var(--muted); font-size: 12.5px; flex: 1 1 200px; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #devs.shut { display: none; }
+  body.focused #devbar { display: none; }
   .hint { color: var(--muted); font-size: 12.5px; }
   main { display: flex; flex-wrap: wrap; gap: 22px; padding: 16px; align-items: flex-start; }
   main.focus { justify-content: center; }
@@ -81,6 +90,7 @@
     <button id="ffit" title="As big as fits the window">Fit</button><button id="freal" title="1 CSS pixel = 1 screen pixel">100%</button>
     <button id="fback" class="main" title="All the devices again (Esc)">All devices</button>
   </div>
+  <div id="devbar"><button id="devtog" title="Show or hide the list of devices">Devices ▾</button><span class="sum" id="devsum"></span><button id="devall" title="Open every group">Open all</button><button id="devnone" title="Fold every group">Fold all</button></div>
   <div class="chips" id="devs"></div>
   <div class="hint" id="note"></div>
 </header>
@@ -115,7 +125,20 @@
   // SiteCraft's page being built: SiteCraft hands it over (View › Test on devices…)
   let built = null; try { built = localStorage.getItem('sitecraft-tester-page'); } catch (e) { /* blocked */ }
   $('app').innerHTML += (built ? '<option value="@built">The page in SiteCraft</option>' : '') + APPS.map((a) => `<option value="../${a}/">${a}</option>`).join('');
-  $('devs').innerHTML = [...new Set(DEVICES.map((d) => d[5]))].map((g) => `<span class="grp">${esc(g)}</span>` + DEVICES.filter((d) => d[5] === g).map(([id, n, w, h]) => `<label title="${w} × ${h}"><input type="checkbox" data-dev="${id}" ${st.on.includes(id) ? 'checked' : ''}>${esc(n)} <span class="hint">${w}×${h}</span></label>`).join('')).join('');
+  // the device list: the whole of it, and each group, open or folded (remembered)
+  const GROUPS = [...new Set(DEVICES.map((d) => d[5]))];
+  if (!Array.isArray(st.shut)) st.shut = []; if (st.listOpen === undefined) st.listOpen = true;
+  $('devs').innerHTML = GROUPS.map((g) => `<button type="button" class="grp" data-grp="${esc(g)}"><span class="tw">▾</span>${esc(g)} <span class="n" data-n></span></button>` + DEVICES.filter((d) => d[5] === g).map(([id, n, w, h]) => `<label data-in="${esc(g)}" title="${w} × ${h}"><input type="checkbox" data-dev="${id}" ${st.on.includes(id) ? 'checked' : ''}>${esc(n)} <span class="hint">${w}×${h}</span></label>`).join('')).join('');
+  function listDraw() {
+    $('devs').classList.toggle('shut', !st.listOpen); $('devtog').textContent = st.listOpen ? 'Devices ▾' : 'Devices ▸'; $('devall').hidden = $('devnone').hidden = !st.listOpen;
+    for (const b of $('devs').querySelectorAll('[data-grp]')) { const g = b.dataset.grp, shut = st.shut.includes(g), n = DEVICES.filter((d) => d[5] === g && st.on.includes(d[0])).length; b.classList.toggle('shut', shut); b.querySelector('[data-n]').textContent = n ? `(${n} chosen)` : ''; $('devs').querySelectorAll(`label[data-in="${CSS.escape(g)}"]`).forEach((l) => l.classList.toggle('hid', shut)); }
+    const on = DEVICES.filter((d) => st.on.includes(d[0])); $('devsum').textContent = on.length ? `${on.length} chosen: ${on.map((d) => d[1].replace(' ≈', '')).join(', ')}` : 'None chosen';
+  }
+  $('devtog').onclick = () => { st.listOpen = !st.listOpen; keep(); listDraw(); };
+  $('devall').onclick = () => { st.shut = []; keep(); listDraw(); };
+  $('devnone').onclick = () => { st.shut = [...GROUPS]; keep(); listDraw(); };
+  $('devs').addEventListener('click', (e) => { const b = e.target.closest('[data-grp]'); if (!b) return; const g = b.dataset.grp; st.shut = st.shut.includes(g) ? st.shut.filter((x) => x !== g) : [...st.shut, g]; keep(); listDraw(); });
+  listDraw();
   $('url').value = st.url === '@built' ? '' : st.url; $('zoom').value = st.zoom; $('colour').value = st.colour;
   if (new URLSearchParams(location.search).get('page') === 'built' && built) st.url = '@built';
   const toggles = () => { $('frames').classList.toggle('on', st.frames); $('infoBtn').classList.toggle('on', st.info); $('sample').classList.toggle('on', st.sample); $('colour').hidden = !st.frames; };
@@ -244,7 +267,7 @@
   const api = {
     devices: () => DEVICES.map(([id, name, w, h, kind]) => ({ id, name, w, h, kind, on: st.on.includes(id) })),
     show(url) { st.url = url; $('url').value = url === '@built' ? '' : url; keep(); draw(); },
-    only(ids) { st.on = ids.filter((id) => DEVICES.some((d) => d[0] === id)); keep(); [...document.querySelectorAll('[data-dev]')].forEach((c) => { c.checked = st.on.includes(c.dataset.dev); }); draw(); },
+    only(ids) { st.on = ids.filter((id) => DEVICES.some((d) => d[0] === id)); keep(); [...document.querySelectorAll('[data-dev]')].forEach((c) => { c.checked = st.on.includes(c.dataset.dev); }); listDraw(); draw(); },
     focus(id, scale) { focus = id || null; fscale = scale || 0; draw(); scrollTo(0, 0); },
     all() { focus = null; draw(); },
     scale(pct) { fscale = pct || 0; draw(); },
@@ -265,7 +288,7 @@
   $('infoBtn').onclick = () => api.set({ info: !st.info });
   $('sample').onclick = () => api.set({ sample: !st.sample });
   $('save').onclick = savePicture;
-  $('devs').onchange = (e) => { const id = e.target.dataset.dev; if (!id) return; st.on = e.target.checked ? [...new Set([...st.on, id])] : st.on.filter((x) => x !== id); keep(); draw(); };
+  $('devs').onchange = (e) => { const id = e.target.dataset.dev; if (!id) return; st.on = e.target.checked ? [...new Set([...st.on, id])] : st.on.filter((x) => x !== id); keep(); listDraw(); draw(); };
   const step = (d) => { const L = DEVICES.filter((x) => st.on.includes(x[0]) || x[0] === focus).map((x) => x[0]), i = L.indexOf(focus); api.focus(L[(i + d + L.length) % L.length], fscale); };
   $('fprev').onclick = () => step(-1); $('fnext').onclick = () => step(1);
   $('fscale').oninput = () => { $('fpct').textContent = $('fscale').value + '%'; };
