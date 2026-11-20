@@ -11,41 +11,75 @@
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.4 "Segoe UI", system-ui, sans-serif; }
   header { position: sticky; top: 0; z-index: 10; background: var(--panel); border-bottom: 1px solid var(--line); padding: 10px 16px; display: grid; gap: 8px; }
+  body.capturing header, body.capturing .dev .top button { visibility: hidden; }
+  body.capturing header { display: none; }
   .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
   h1 { font-size: 17px; margin: 0 8px 0 0; }
   input, select, button { font: inherit; color: inherit; }
   input[type=text] { flex: 1 1 260px; min-width: 0; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel-2); }
   select, button { padding: 6px 11px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel-2); cursor: pointer; }
   button.main { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button.on { background: color-mix(in srgb, var(--accent) 22%, var(--panel-2)); border-color: var(--accent); }
   .chips { display: flex; flex-wrap: wrap; gap: 6px; }
   .chips label { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel-2); cursor: pointer; font-size: 12.5px; }
   .chips input { margin: 0; }
+  .chips .grp { flex-basis: 100%; font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); margin-top: 2px; }
   .hint { color: var(--muted); font-size: 12.5px; }
-  main { display: flex; flex-wrap: wrap; gap: 18px; padding: 16px; align-items: flex-start; }
-  .dev { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 8px; display: grid; gap: 6px; }
-  .dev .top { display: flex; gap: 6px; align-items: center; font-size: 12.5px; }
+  main { display: flex; flex-wrap: wrap; gap: 22px; padding: 16px; align-items: flex-start; }
+  main.focus { justify-content: center; }
+  .dev { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px; display: grid; gap: 8px; justify-items: center; }
+  .dev .top { display: flex; gap: 6px; align-items: center; font-size: 12.5px; width: 100%; }
   .dev .top b { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .dev .top button { padding: 2px 7px; font-size: 12px; }
-  .screen { position: relative; overflow: hidden; border-radius: 6px; background: #fff; outline: 4px solid #222; }
+  .screen { position: relative; overflow: hidden; background: #fff; }
+  .plain .screen { border-radius: 6px; outline: 4px solid #222; }
   .screen iframe { position: absolute; left: 0; top: 0; border: 0; transform-origin: 0 0; background: #fff; }
+  .screen .ov { position: absolute; pointer-events: none; z-index: 2; }
+  /* device frames (sizes are set from the scale in the script) */
+  .frame { position: relative; display: grid; justify-items: center; }
+  .frame .body { position: relative; box-shadow: 0 10px 28px rgba(0,0,0,.35), 0 0 0 1.5px rgba(150,156,170,.55), inset 0 0 0 1px rgba(255,255,255,.12); }
+  .frame .base { background: linear-gradient(#cfd3da, #9da3ad); clip-path: polygon(6% 0, 94% 0, 100% 100%, 0 100%); }
+  .frame .neck { background: linear-gradient(90deg, #9aa0aa, #c9cdd4, #9aa0aa); }
+  .frame .foot { background: linear-gradient(#c9cdd4, #8d939d); border-radius: 6px 6px 3px 3px; }
+  .info { font-size: 12px; color: var(--muted); width: 100%; display: grid; gap: 2px; }
+  .info b { color: var(--fg); font-weight: 600; }
   .badge { padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; cursor: pointer; border: 0; }
   .badge.ok { background: color-mix(in srgb, var(--good) 22%, transparent); color: var(--good); }
   .badge.cut { background: color-mix(in srgb, var(--bad) 20%, transparent); color: var(--bad); }
   .badge.na { background: var(--panel-2); color: var(--muted); }
   .list { font-size: 12px; color: var(--muted); max-width: 100%; overflow-wrap: anywhere; }
+  .fbar { display: none; position: sticky; top: 0; }
+  main.focus + .fbar { display: flex; }
+  #focusbar { display: none; }
+  body.focused #focusbar { display: flex; }
+  body.focused #devs, body.focused #note { display: none; }
   @media (max-width: 600px) { header { padding: 8px 10px; } main { padding: 10px; gap: 12px; } }
 </style>
 </head>
 <body>
 <header>
-  <div class="row"><h1>Page tester</h1><span class="hint">A page at the screen sizes of phones, folding phones, tablets and computers, side by side.</span></div>
+  <div class="row"><h1>Page tester</h1><span class="hint">A page at the screen sizes of phones, folding phones, tablets and computers, side by side: in device frames, with what it holds, as one picture.</span></div>
   <div class="row">
     <select id="app" aria-label="A Craft app"><option value="">A Craft app…</option></select>
     <input type="text" id="url" placeholder="Address: ../shiftcraft/ or https://…" aria-label="Address">
     <button class="main" id="go">Show</button>
     <button id="again" title="Load every screen again">Reload all</button>
     <button id="turn" title="Turn every screen sideways (or back)">Turn ⟳</button>
-    <label class="hint">Size <select id="zoom"><option value="0.35">Small</option><option value="0.5" selected>Medium</option><option value="0.75">Large</option><option value="1">Real size</option></select></label>
+    <label class="hint">Size <select id="zoom"><option value="0.35">Small</option><option value="0.5">Medium</option><option value="0.75">Large</option><option value="1">Real size</option></select></label>
+  </div>
+  <div class="row">
+    <button id="frames" title="Draw each screen as its device: phone, fold with its hinge, tablet, laptop, monitor">Device frames</button>
+    <select id="colour" aria-label="Frame colour"><option value="black">Black</option><option value="silver">Silver</option><option value="white">White</option></select>
+    <button id="infoBtn" title="Under each screen: the title, how long the page is, its fonts, pictures and links">Page information</button>
+    <button id="sample" title="Empty headings, text, buttons and boxes get made-up words; empty or missing pictures a grey placeholder with their size">Sample content</button>
+    <button id="save" title="One picture (PNG) of all the devices with the page in them: the browser asks once to share this tab">Save as a picture…</button>
+  </div>
+  <div class="row" id="focusbar">
+    <b id="fname"></b>
+    <button id="fprev" title="The device before">‹</button><button id="fnext" title="The next device">›</button>
+    <label class="hint">Scale <input type="range" id="fscale" min="20" max="150" step="5" style="vertical-align:middle"> <span id="fpct"></span></label>
+    <button id="ffit" title="As big as fits the window">Fit</button><button id="freal" title="1 CSS pixel = 1 screen pixel">100%</button>
+    <button id="fback" class="main" title="All the devices again (Esc)">All devices</button>
   </div>
   <div class="chips" id="devs"></div>
   <div class="hint" id="note"></div>
@@ -56,23 +90,35 @@
   'use strict';
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-  // screen sizes in CSS pixels (what a page sees as its width and height)
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  // screen sizes in CSS pixels (what a page sees as its width and height), and the device each is drawn as
+  // (iPhones and iPads in points, the size a web page sees: the models of the last three years)
   const DEVICES = [
-    ['flipc', 'Flip phone, cover screen', 260, 512], ['flipo', 'Flip phone, open', 412, 915], ['foldc', 'Fold, closed', 344, 882], ['foldo', 'Fold, open', 884, 1104],
-    ['tri1', 'Tri-fold, one panel open', 600, 900], ['tri2', 'Tri-fold, all open', 1008, 1000], ['phone', 'Phone (iPhone size)', 390, 844], ['android', 'Small Android', 360, 800],
-    ['tablet', 'Tablet', 768, 1024], ['tabletl', 'Tablet sideways', 1024, 768], ['laptop', 'Laptop', 1366, 768], ['desktop', 'Desktop', 1920, 1080],
+    ['flipc', 'Flip phone, cover screen', 260, 512, 'cover', 'Folding'], ['flipo', 'Flip phone, open', 412, 915, 'flip', 'Folding'], ['foldc', 'Fold, closed', 344, 882, 'phone', 'Folding'], ['foldo', 'Fold, open', 884, 1104, 'fold', 'Folding'],
+    ['tri1', 'Tri-fold, one panel open', 600, 900, 'fold', 'Folding'], ['tri2', 'Tri-fold, all open', 1008, 1000, 'trifold', 'Folding'],
+    ['ip15', 'iPhone 15 · 16', 393, 852, 'iphone', 'iPhone'], ['ip16p', 'iPhone 16 Pro · 17 · 17 Pro', 402, 874, 'iphone', 'iPhone'], ['ipair', 'iPhone Air', 420, 912, 'iphone', 'iPhone'],
+    ['ip15pl', 'iPhone 15 Plus · 15 Pro Max · 16 Plus', 430, 932, 'iphone', 'iPhone'], ['ip16pm', 'iPhone 16 Pro Max · 17 Pro Max', 440, 956, 'iphone', 'iPhone'], ['phone', 'iPhone 16e · 13 · 14', 390, 844, 'phone', 'iPhone'],
+    ['ipadmini', 'iPad mini', 744, 1133, 'tablet', 'iPad'], ['ipad', 'iPad · iPad Air 11″', 820, 1180, 'tablet', 'iPad'], ['ipadpro11', 'iPad Pro 11″', 834, 1210, 'tablet', 'iPad'], ['ipadair13', 'iPad Air 13″', 1024, 1366, 'tablet', 'iPad'], ['ipadpro13', 'iPad Pro 13″', 1032, 1376, 'tablet', 'iPad'],
+    // (Android tablets: what Chrome usually reports at the normal display size; ≈ where models differ)
+    ['tabs9', 'Galaxy Tab S9 · S10 (11″)', 800, 1280, 'tablet', 'Samsung and Huawei tablets'], ['tabs9p', 'Galaxy Tab S9+ · S10+ (12.4″) ≈', 876, 1400, 'tablet', 'Samsung and Huawei tablets'], ['tabs9u', 'Galaxy Tab S9 · S10 Ultra (14.6″) ≈', 924, 1480, 'tablet', 'Samsung and Huawei tablets'],
+    ['taba9p', 'Galaxy Tab A9+ (11″)', 800, 1280, 'tablet', 'Samsung and Huawei tablets'], ['taba9', 'Galaxy Tab A9 (8.7″) ≈', 600, 1000, 'tablet', 'Samsung and Huawei tablets'], ['huawei10', 'Huawei MediaPad M5 · T5 · M5 lite (10″)', 800, 1280, 'tablet', 'Samsung and Huawei tablets'],
+    ['android', 'Small Android', 360, 800, 'phone', 'Other phones and tablets'], ['tablet', 'Tablet (older iPad, many Android)', 768, 1024, 'tablet', 'Other phones and tablets'], ['tabletl', 'Tablet sideways', 1024, 768, 'tablet', 'Other phones and tablets'],
+    ['laptop', 'Laptop', 1366, 768, 'laptop', 'Computers'], ['desktop', 'Desktop', 1920, 1080, 'monitor', 'Computers'],
   ];
   const APPS = ['shiftcraft', 'accountcraft', 'filecraft', 'icalcraft', 'labelcraft', 'logocraft', 'presscraft', 'barcodecraft', 'clipartcraft', 'imagecraft', '3dcraft', 'sitecraft', 'datacraft'];
+  const COLOURS = { black: ['#16181c', '#2b2e35'], silver: ['#c3c7ce', '#e3e6ea'], white: ['#f4f5f7', '#ffffff'] };
   const KEY = 'sitecraft-tester', load = () => { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { return {}; } }, keep = () => { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) { /* blocked */ } };
-  const st = { url: '', on: ['flipc', 'foldc', 'flipo', 'tri1', 'foldo', 'tablet'], turned: false, zoom: '0.5', ...load() };
+  const st = { url: '', on: ['flipc', 'foldc', 'flipo', 'tri1', 'foldo', 'tablet'], turned: false, zoom: '0.5', frames: true, colour: 'black', info: true, sample: false, ...load() };
+  let focus = null, fscale = 0; // a device on its own (its id), and its scale (0 = fit the window)
   // SiteCraft's page being built: SiteCraft hands it over (View › Test on devices…)
   let built = null; try { built = localStorage.getItem('sitecraft-tester-page'); } catch (e) { /* blocked */ }
   $('app').innerHTML += (built ? '<option value="@built">The page in SiteCraft</option>' : '') + APPS.map((a) => `<option value="../${a}/">${a}</option>`).join('');
-  $('devs').innerHTML = DEVICES.map(([id, n, w, h]) => `<label title="${w} × ${h}"><input type="checkbox" data-dev="${id}" ${st.on.includes(id) ? 'checked' : ''}>${esc(n)} <span class="hint">${w}×${h}</span></label>`).join('');
-  $('url').value = st.url; $('zoom').value = st.zoom;
-  if (new URLSearchParams(location.search).get('page') === 'built' && built) { st.url = '@built'; $('url').value = ''; }
+  $('devs').innerHTML = [...new Set(DEVICES.map((d) => d[5]))].map((g) => `<span class="grp">${esc(g)}</span>` + DEVICES.filter((d) => d[5] === g).map(([id, n, w, h]) => `<label title="${w} × ${h}"><input type="checkbox" data-dev="${id}" ${st.on.includes(id) ? 'checked' : ''}>${esc(n)} <span class="hint">${w}×${h}</span></label>`).join('')).join('');
+  $('url').value = st.url === '@built' ? '' : st.url; $('zoom').value = st.zoom; $('colour').value = st.colour;
+  if (new URLSearchParams(location.search).get('page') === 'built' && built) st.url = '@built';
+  const toggles = () => { $('frames').classList.toggle('on', st.frames); $('infoBtn').classList.toggle('on', st.info); $('sample').classList.toggle('on', st.sample); $('colour').hidden = !st.frames; };
 
-  // what runs past the left or right edge with no way to scroll to it (the page must be on this site to look inside it)
+  // ---- what runs past the left or right edge with no way to scroll to it (the page must be on this site to look inside it)
   function cutOff(win) {
     const d = win.document, W = win.innerWidth, out = [], seen = new Set();
     const name = (e) => e.tagName.toLowerCase() + (e.id ? '#' + e.id : '') + (typeof e.className === 'string' && e.className.trim() ? '.' + e.className.trim().split(/\s+/)[0] : '');
@@ -86,33 +132,146 @@
     }
     return { list: out, wide: d.documentElement.scrollWidth > W + 1 };
   }
+  // ---- what the page holds: title, length, fonts, pictures, links
+  function pageInfo(win, ms) {
+    const d = win.document, fonts = new Map();
+    let n = 0; for (const e of d.querySelectorAll('body *')) { if (n > 600) break; if (![...e.childNodes].some((c) => c.nodeType === 3 && c.textContent.trim())) continue; n++; const f = win.getComputedStyle(e).fontFamily.split(',')[0].replace(/["']/g, '').trim(); fonts.set(f, (fonts.get(f) || 0) + 1); }
+    const imgs = [...d.images], broken = imgs.filter((i) => i.complete && !i.naturalWidth && i.getAttribute('src')).length, H = Math.max(d.documentElement.scrollHeight, d.body ? d.body.scrollHeight : 0);
+    return { title: d.title || '(no title)', screens: H / win.innerHeight, height: H, fonts: [...fonts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4).map((x) => x[0]), images: imgs.length + d.querySelectorAll('svg').length, broken, links: d.querySelectorAll('a[href]').length, buttons: d.querySelectorAll('button, [role=button]').length, ms };
+  }
+  // ---- sample content: made-up words in empty places, a grey placeholder for empty or missing pictures
+  const WORDS = { h: ['Your headline here', 'A short, clear title', 'What we do best', 'Section heading'], p: ['A few lines about what this part of the page is for. Replace them with your own words.', 'Here is where the details go: what, when, where and why, in two or three short sentences.', 'Sample text to show how a paragraph wraps and how much room it takes on this screen.'], b: ['Learn more', 'Get started', 'Sign up', 'Contact us'], li: ['First point', 'Second point', 'Third point'] };
+  const holder = (w, h) => 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><rect width="100%" height="100%" fill="#d9dce2"/><path d="M${w * 0.3} ${h * 0.68}l${w * 0.12} -${h * 0.18} ${w * 0.09} ${h * 0.11} ${w * 0.07} -${h * 0.07} ${w * 0.12} ${h * 0.14}z" fill="#aab0bb"/><circle cx="${w * 0.62}" cy="${h * 0.34}" r="${Math.min(w, h) * 0.06}" fill="#aab0bb"/><text x="50%" y="88%" text-anchor="middle" font-family="sans-serif" font-size="${Math.max(10, Math.min(w, h) * 0.08)}" fill="#6f7686">${w} × ${h}</text></svg>`);
+  function sampleFill(win) {
+    const d = win.document; let k = 0; const pick = (list) => list[k++ % list.length];
+    for (const e of d.querySelectorAll('h1,h2,h3,h4,h5,h6,p,li,button,a,td,th,label,blockquote,figcaption')) {
+      if (e.textContent.trim() || e.querySelector('img,svg,input,select,textarea,video,canvas,iframe')) continue;
+      const t = e.tagName.toLowerCase(); e.textContent = /^h\d$/.test(t) ? pick(WORDS.h) : t === 'button' || t === 'a' ? pick(WORDS.b) : t === 'li' || t === 'td' || t === 'th' || t === 'label' ? pick(WORDS.li) : pick(WORDS.p); e.dataset.sample = '1';
+    }
+    for (const img of d.images) if (!img.getAttribute('src') || (img.complete && !img.naturalWidth)) { const w = Math.round(img.getBoundingClientRect().width) || +img.getAttribute('width') || 320, h = Math.round(img.getBoundingClientRect().height) || +img.getAttribute('height') || Math.round(w * 0.62); img.src = holder(w, Math.max(40, h)); }
+    for (const e of d.querySelectorAll('section,article,main,header,footer,aside,div')) {
+      if (e.children.length || e.textContent.trim()) continue; const r = e.getBoundingClientRect(); if (r.height < 40 || r.width < 60) continue;
+      const p = d.createElement('p'); p.textContent = pick(WORDS.p); p.style.margin = '12px'; p.dataset.sample = '1'; e.append(p);
+    }
+  }
+  // ---- a device frame round a screen w × h shown at scale z
+  function framed(kind, w, h, z, screen) {
+    const [c1, c2] = COLOURS[st.colour] || COLOURS.black, wrap = document.createElement('div'); wrap.className = 'frame';
+    const body = document.createElement('div'); body.className = 'body';
+    const b = (n) => Math.max(2, Math.round(n * z)), side = h > w;
+    const set = (pad, rad) => { body.style.padding = pad; body.style.borderRadius = rad; body.style.background = `linear-gradient(145deg, ${c2}, ${c1})`; };
+    screen.style.borderRadius = '0';
+    if (kind === 'phone' || kind === 'flip' || kind === 'cover' || kind === 'iphone') { set(`${b(kind === 'cover' ? 16 : 12)}px`, `${b(kind === 'cover' ? 34 : 50)}px`); screen.style.borderRadius = `${b(kind === 'cover' ? 22 : kind === 'iphone' ? 44 : 36)}px`;
+      const cam = document.createElement('div'); cam.className = 'ov';
+      if (kind === 'iphone') { const L = b(124), T = b(36); Object.assign(cam.style, side ? { left: `calc(50% - ${L / 2}px)`, top: b(11) + 'px', width: L + 'px', height: T + 'px' } : { top: `calc(50% - ${L / 2}px)`, left: b(11) + 'px', width: T + 'px', height: L + 'px' }, { borderRadius: '999px', background: '#050506' }); }
+      else { const r = b(9); Object.assign(cam.style, side ? { left: `calc(50% - ${r / 2}px)`, top: b(10) + 'px' } : { top: `calc(50% - ${r / 2}px)`, left: b(10) + 'px' }, { width: r + 'px', height: r + 'px', borderRadius: '50%', background: '#0b0c0e', boxShadow: '0 0 0 2px rgba(255,255,255,.15)' }); }
+      screen.append(cam);
+      if (kind === 'flip') { const fold = document.createElement('div'); fold.className = 'ov'; Object.assign(fold.style, side ? { left: 0, right: 0, top: 'calc(50% - 1px)', height: '2px' } : { top: 0, bottom: 0, left: 'calc(50% - 1px)', width: '2px' }, { background: 'linear-gradient(rgba(0,0,0,.08), rgba(0,0,0,.18))' }); screen.append(fold); } }
+    else if (kind === 'fold' || kind === 'trifold') { set(`${b(10)}px`, `${b(26)}px`); screen.style.borderRadius = `${b(16)}px`;
+      const n = kind === 'trifold' ? 2 : 1, vert = !st.turned; for (let i = 1; i <= n; i++) { const at = (100 * i) / (n + 1), l = document.createElement('div'); l.className = 'ov'; Object.assign(l.style, vert ? { top: 0, bottom: 0, left: `calc(${at}% - ${b(5)}px)`, width: b(10) + 'px', background: 'linear-gradient(90deg, rgba(0,0,0,0), rgba(0,0,0,.13), rgba(255,255,255,.18), rgba(0,0,0,.13), rgba(0,0,0,0))' } : { left: 0, right: 0, top: `calc(${at}% - ${b(5)}px)`, height: b(10) + 'px', background: 'linear-gradient(rgba(0,0,0,0), rgba(0,0,0,.13), rgba(255,255,255,.18), rgba(0,0,0,.13), rgba(0,0,0,0))' }); screen.append(l); } }
+    else if (kind === 'tablet') { set(`${b(26)}px`, `${b(34)}px`); screen.style.borderRadius = `${b(8)}px`; }
+    else if (kind === 'laptop') { set(`${b(22)}px ${b(22)}px ${b(30)}px`, `${b(18)}px ${b(18)}px 0 0`); }
+    else if (kind === 'monitor') { set(`${b(20)}px ${b(20)}px ${b(34)}px`, `${b(12)}px`); }
+    body.append(screen); wrap.append(body);
+    const W = w * z;
+    if (kind === 'laptop') { const base = document.createElement('div'); base.className = 'base'; base.style.width = Math.round(W * 1.18 + b(44)) + 'px'; base.style.height = b(26) + 'px'; wrap.append(base); }
+    if (kind === 'monitor') { const neck = document.createElement('div'); neck.className = 'neck'; neck.style.width = Math.round(W * 0.09) + 'px'; neck.style.height = Math.round(W * 0.07) + 'px'; const foot = document.createElement('div'); foot.className = 'foot'; foot.style.width = Math.round(W * 0.3) + 'px'; foot.style.height = b(14) + 'px'; wrap.append(neck, foot); }
+    return wrap;
+  }
+  const shown = new Map(); // id → { iframe, info, cut }
+  function scaleFor(w, h, kind) { // a device on its own: as big as fits under the header (or the scale chosen)
+    if (fscale) return fscale / 100;
+    const head = document.querySelector('header').getBoundingClientRect().height, extra = kind === 'laptop' || kind === 'monitor' ? 1.25 : 1.12;
+    return Math.max(0.15, Math.min((innerWidth - 80) / (w * 1.12), (innerHeight - head - 150) / (h * extra), 1.5));
+  }
   function draw() {
-    const z = +st.zoom, src = st.url || '';
-    $('grid').innerHTML = '';
+    const src = st.url || ''; toggles(); shown.clear();
+    $('grid').innerHTML = ''; $('grid').classList.toggle('focus', !!focus); document.body.classList.toggle('focused', !!focus);
     if (!src) { $('grid').innerHTML = '<p class="hint">Choose a Craft app or type an address, then Show.</p>'; return; }
-    for (const [id, n, w0, h0] of DEVICES.filter((d) => st.on.includes(d[0]))) {
-      const [w, h] = st.turned ? [h0, w0] : [w0, h0];
-      const box = document.createElement('div'); box.className = 'dev';
-      box.innerHTML = `<div class="top"><b title="${esc(n)}">${esc(n)}</b><span class="hint">${w}×${h}</span><button class="badge na" data-b>…</button><button data-open title="Open at full size in a new tab">↗</button></div><div class="screen" style="width:${Math.round(w * z)}px;height:${Math.round(h * z)}px"><iframe title="${esc(n)}" style="width:${w}px;height:${h}px;transform:scale(${z})"></iframe></div><div class="list" data-l></div>`;
+    const list = focus ? DEVICES.filter((d) => d[0] === focus) : DEVICES.filter((d) => st.on.includes(d[0]));
+    for (const [id, n, w0, h0, kind] of list) {
+      const [w, h] = st.turned ? [h0, w0] : [w0, h0], z = focus ? scaleFor(w, h, kind) : +st.zoom;
+      if (focus) { $('fname').textContent = `${n} · ${w}×${h}`; $('fscale').value = Math.round(z * 100); $('fpct').textContent = Math.round(z * 100) + '%'; }
+      const box = document.createElement('div'); box.className = 'dev' + (st.frames ? '' : ' plain');
+      box.innerHTML = `<div class="top"><b title="${esc(n)}">${esc(n)}</b><span class="hint">${w}×${h}</span><button class="badge na" data-b>…</button>${focus ? '' : '<button data-focus title="This device on its own, big and fully usable">⤢</button>'}<button data-open title="Open at its size in a window of its own">↗</button></div>`;
+      const screen = document.createElement('div'); screen.className = 'screen'; screen.style.width = Math.round(w * z) + 'px'; screen.style.height = Math.round(h * z) + 'px';
+      const f = document.createElement('iframe'); f.title = n; f.style.width = w + 'px'; f.style.height = h + 'px'; f.style.transform = `scale(${z})`; screen.append(f);
+      box.append(st.frames ? framed(kind, w, h, z, screen) : screen);
+      const info = document.createElement('div'); info.className = 'info'; info.hidden = !st.info; box.append(info);
+      const l = document.createElement('div'); l.className = 'list'; box.append(l);
       $('grid').append(box);
-      const f = box.querySelector('iframe'), b = box.querySelector('[data-b]'), l = box.querySelector('[data-l]');
-      let found = null, shown = false;
-      const check = () => { try { const r = cutOff(f.contentWindow); found = r; b.className = 'badge ' + (r.list.length || r.wide ? 'cut' : 'ok'); b.textContent = r.list.length ? `${r.list.length} cut off` : r.wide ? 'wider than the screen' : '✓ fits'; b.title = r.list.length ? 'Show what is cut off' : ''; }
-        catch (e) { b.className = 'badge na'; b.textContent = 'can’t look inside'; b.title = 'A page from another site (or opened as a file) can be shown but not checked: open the tester from the web server the page is on.'; } };
-      f.onload = () => { setTimeout(check, 1500); setTimeout(check, 4000); };
+      const b = box.querySelector('[data-b]'), t0 = performance.now(), rec = { id, name: n, w, h, iframe: f, info: null, cut: null };
+      shown.set(id, rec);
+      let found = null, marked = false, ms = 0;
+      const check = () => { try { const win = f.contentWindow; if (st.sample && !win.__sampled) { win.__sampled = true; sampleFill(win); } const r = cutOff(win); found = r; rec.cut = { n: r.list.length, wide: r.wide, what: r.list.map((x) => x.what) };
+          b.className = 'badge ' + (r.list.length || r.wide ? 'cut' : 'ok'); b.textContent = r.list.length ? `${r.list.length} cut off` : r.wide ? 'wider than the screen' : '✓ fits'; b.title = r.list.length ? 'Show what is cut off' : '';
+          const p = pageInfo(win, ms); rec.info = p;
+          info.innerHTML = `<div><b>${esc(p.title)}</b></div><div>${p.screens < 1.05 ? 'Fits on one screen' : `${p.screens.toFixed(1)} screens long (${p.height} px)`} · loaded in ${(p.ms / 1000).toFixed(1)} s</div><div>Fonts: ${esc(p.fonts.join(', ') || 'none')}</div><div>${p.images} picture${p.images === 1 ? '' : 's'}${p.broken ? ` (<b style="color:var(--bad)">${p.broken} missing</b>)` : ''} · ${p.links} link${p.links === 1 ? '' : 's'} · ${p.buttons} button${p.buttons === 1 ? '' : 's'}</div>`; }
+        catch (e) { b.className = 'badge na'; b.textContent = 'can’t look inside'; b.title = 'A page from another site (or opened as a file) can be shown but not checked: open the tester from the web server the page is on.'; info.innerHTML = '<div>Page information: only for pages on the same web server as the tester.</div>'; } };
+      f.onload = () => { ms = performance.now() - t0; setTimeout(check, 1500); setTimeout(check, 4000); };
       if (src === '@built') f.srcdoc = built || '<p>Nothing from SiteCraft yet.</p>'; else f.src = src;
-      b.onclick = () => { if (!found || !found.list.length) return; shown = !shown; found.list.forEach((x) => { x.el.style.outline = shown ? '3px solid #e53935' : ''; x.el.style.outlineOffset = shown ? '-3px' : ''; }); l.innerHTML = shown ? found.list.map((x) => `• ${esc(x.what)}${x.text ? ' “' + esc(x.text) + '”' : ''}`).join('<br>') : ''; };
+      b.onclick = () => { if (!found || !found.list.length) return; marked = !marked; found.list.forEach((x) => { x.el.style.outline = marked ? '3px solid #e53935' : ''; x.el.style.outlineOffset = marked ? '-3px' : ''; }); l.innerHTML = marked ? found.list.map((x) => `• ${esc(x.what)}${x.text ? ' “' + esc(x.text) + '”' : ''}`).join('<br>') : ''; };
+      const fb = box.querySelector('[data-focus]'); if (fb) fb.onclick = () => api.focus(id);
       box.querySelector('[data-open]').onclick = () => { if (src === '@built') { const u = URL.createObjectURL(new Blob([built], { type: 'text/html' })); window.open(u, '_blank'); } else window.open(src, '_blank', `width=${w},height=${h}`); };
     }
-    $('note').textContent = location.protocol === 'file:' ? 'Opened as a file: pages show, but they can be checked only when the tester is opened from the web server (e.g. …/craft/sitecraft/tester.html).' : 'Sizes only: a page here does not know it is on a phone (no touch, no phone browser name), but everything that depends on the screen size is as on the phone.';
+    $('note').textContent = location.protocol === 'file:' ? 'Opened as a file: pages show, but they can be checked only when the tester is opened from the web server (e.g. …/craft/sitecraft/tester.html).' : 'The pages work: click, type and scroll in them. Sizes only: a page here does not know it is on a phone (no touch, no phone browser name).';
   }
-  $('go').onclick = () => { st.url = $('url').value.trim(); keep(); draw(); };
+
+  // ---- one picture of all the devices: the browser shares this tab once; the tester scrolls and puts the pieces together
+  async function savePicture() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) return alert('This browser cannot take a picture of a page (try Chrome or Edge).');
+    let stream; try { stream = await navigator.mediaDevices.getDisplayMedia({ video: { displaySurface: 'browser' }, audio: false, preferCurrentTab: true, selfBrowserSurface: 'include' }); } catch (e) { return; }
+    const v = document.createElement('video'); v.srcObject = stream; v.muted = true; await v.play();
+    const y0 = scrollY; document.body.classList.add('capturing'); await sleep(500);
+    try {
+      const g = $('grid'), top = g.getBoundingClientRect().top + scrollY, H = g.scrollHeight, W = g.getBoundingClientRect().width, k = v.videoWidth / innerWidth;
+      const c = document.createElement('canvas'); c.width = Math.round(W * k); c.height = Math.round(H * k); const x = c.getContext('2d');
+      x.fillStyle = getComputedStyle(document.body).backgroundColor; x.fillRect(0, 0, c.width, c.height);
+      for (let y = 0; y < H; y += innerHeight) {
+        scrollTo(0, top + y); await sleep(450);
+        const rr = g.getBoundingClientRect(), vis = Math.min(innerHeight, rr.bottom) - Math.max(0, rr.top); if (vis <= 0) continue;
+        const sy = Math.max(0, rr.top), dy = sy - rr.top;
+        x.drawImage(v, rr.left * k, sy * k, W * k, vis * k, 0, dy * k, W * k, vis * k);
+      }
+      const a = document.createElement('a'); a.download = `page mock-up ${(st.url === '@built' ? 'SiteCraft page' : st.url).replace(/[\\/:*?"<>|.]+/g, ' ').trim() || 'page'}.png`;
+      a.href = URL.createObjectURL(await new Promise((r) => c.toBlob(r, 'image/png'))); a.click();
+    } finally { stream.getTracks().forEach((t) => t.stop()); document.body.classList.remove('capturing'); scrollTo(0, y0); }
+  }
+
+  // ---- the controls, and the same as commands (window.PageTester: for scripts and helpers)
+  const api = {
+    devices: () => DEVICES.map(([id, name, w, h, kind]) => ({ id, name, w, h, kind, on: st.on.includes(id) })),
+    show(url) { st.url = url; $('url').value = url === '@built' ? '' : url; keep(); draw(); },
+    only(ids) { st.on = ids.filter((id) => DEVICES.some((d) => d[0] === id)); keep(); [...document.querySelectorAll('[data-dev]')].forEach((c) => { c.checked = st.on.includes(c.dataset.dev); }); draw(); },
+    focus(id, scale) { focus = id || null; fscale = scale || 0; draw(); scrollTo(0, 0); },
+    all() { focus = null; draw(); },
+    scale(pct) { fscale = pct || 0; draw(); },
+    set(o) { Object.assign(st, o); keep(); draw(); },
+    results: () => [...shown.values()].map(({ id, name, w, h, info, cut }) => ({ id, name, w, h, info, cut })),
+    window: (id) => (shown.get(id) || {}).iframe?.contentWindow || null,
+    savePicture,
+  };
+  window.PageTester = api;
+  $('go').onclick = () => api.show($('url').value.trim());
   $('url').onkeydown = (e) => { if (e.key === 'Enter') $('go').click(); };
-  $('app').onchange = () => { const v = $('app').value; if (!v) return; $('url').value = v === '@built' ? '' : v; st.url = v; keep(); draw(); };
+  $('app').onchange = () => { const v = $('app').value; if (v) api.show(v); };
   $('again').onclick = draw;
-  $('turn').onclick = () => { st.turned = !st.turned; keep(); draw(); };
-  $('zoom').onchange = () => { st.zoom = $('zoom').value; keep(); draw(); };
+  $('turn').onclick = () => api.set({ turned: !st.turned });
+  $('zoom').onchange = () => api.set({ zoom: $('zoom').value });
+  $('frames').onclick = () => api.set({ frames: !st.frames });
+  $('colour').onchange = () => api.set({ colour: $('colour').value });
+  $('infoBtn').onclick = () => api.set({ info: !st.info });
+  $('sample').onclick = () => api.set({ sample: !st.sample });
+  $('save').onclick = savePicture;
   $('devs').onchange = (e) => { const id = e.target.dataset.dev; if (!id) return; st.on = e.target.checked ? [...new Set([...st.on, id])] : st.on.filter((x) => x !== id); keep(); draw(); };
+  const step = (d) => { const L = DEVICES.filter((x) => st.on.includes(x[0]) || x[0] === focus).map((x) => x[0]), i = L.indexOf(focus); api.focus(L[(i + d + L.length) % L.length], fscale); };
+  $('fprev').onclick = () => step(-1); $('fnext').onclick = () => step(1);
+  $('fscale').oninput = () => { $('fpct').textContent = $('fscale').value + '%'; };
+  $('fscale').onchange = () => api.scale(+$('fscale').value);
+  $('ffit').onclick = () => api.scale(0); $('freal').onclick = () => api.scale(100);
+  $('fback').onclick = () => api.all();
+  document.addEventListener('keydown', (e) => { if (!focus || e.target.closest('input,select,textarea')) return; if (e.key === 'Escape') api.all(); if (e.key === 'ArrowLeft') step(-1); if (e.key === 'ArrowRight') step(1); });
+  let rt = 0; addEventListener('resize', () => { if (focus && !fscale) { clearTimeout(rt); rt = setTimeout(draw, 250); } });
   draw();
 })();
 </script>
