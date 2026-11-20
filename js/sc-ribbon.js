@@ -154,7 +154,7 @@
     },
     smart: SC.smartTypography,
     'dev-desktop': () => SC.setDevice('Desktop'), 'dev-tablet': () => SC.setDevice('Tablet'), 'dev-phone': () => SC.setDevice('Mobile'),
-    rotate: () => document.getElementById('rotate').click(),
+    rotate: () => document.getElementById('rotate').click(), 'test-devices': () => SC.testDevices(),
     'more-sizes': () => { const s = document.getElementById('device-sel'); s.focus(); try { s.showPicker(); } catch (e) { toast('Pick a size from the list at the top of the window.'); } },
     'zoom-in': () => SC.zoomStep(1), 'zoom-out': () => SC.zoomStep(-1), 'zoom-100': () => SC.setZoom(100),
     'zoom-fit': () => SC.setDevice(SC.getDevice()),
@@ -196,7 +196,7 @@
       ['Show on', [col(small('show-desktop', 'Computers', 'desktop', 'Show the selected element on computers'), small('show-tablet', 'Tablets', 'tablet', 'Show it on tablets'), small('show-phone', 'Phones', 'phone', 'Show it on phones'))]],
     ] },
     { id: 'view', label: 'View', groups: [
-      ['Screens', [big('dev-desktop', 'Computer', 'desktop'), big('dev-tablet', 'Tablet', 'tablet'), big('dev-phone', 'Phone', 'phone'), col(small('rotate', 'Sideways', 'rotate', 'Turn the phone or tablet'), small('more-sizes', 'More sizes', 'sizes', 'iPhone, Samsung, Pixel, iPad, Galaxy Tab and PC sizes'))]],
+      ['Screens', [big('dev-desktop', 'Computer', 'desktop'), big('dev-tablet', 'Tablet', 'tablet'), big('dev-phone', 'Phone', 'phone'), col(small('rotate', 'Sideways', 'rotate', 'Turn the phone or tablet'), small('more-sizes', 'More sizes', 'sizes', 'iPhone, Samsung, Pixel, iPad, Galaxy Tab and PC sizes'), small('test-devices', 'Test on devices', 'sizes', 'This page at every screen size side by side: flip and fold phones, iPhones, iPads, tablets, computers (the page tester; log in first)'))]],
       ['Zoom', [col(small('zoom-in', 'Zoom in', 'zoomIn'), small('zoom-out', 'Zoom out', 'zoomOut'), small('zoom-100', '100%', 'zoom100')), small('zoom-fit', 'Fit', 'fit', 'Fit the screen size in the window')]],
       ['Look', [big('preview', 'Preview', 'eye', 'See the page without the editor (Esc to return)'), col(small('outlines', 'Outlines', 'outline', 'Dashed lines around every element'), small('fullscreen', 'Full screen', 'full'), small('code', 'Page code', 'htmlcode'))]],
       ['Show', [col(small('tog-status', 'Status bar', 'status'), small('tog-spell', 'Spelling', 'spell', 'Underline spelling mistakes as you type'))]],
@@ -408,7 +408,7 @@
       { text: devSel.value === 'Desktop' ? 'Computer' : ((devSel.options[devSel.selectedIndex] || {}).text || '').replace(/\s\d+ × \d+$/, ''), title: 'Screen size being previewed', run: () => { devSel.focus(); try { devSel.showPicker(); } catch (e) {} } },
       { text: (SC.DOCTYPES[SC.settings.doctype] || SC.DOCTYPES.html5).label.replace(/ \(.*\)/, ''), title: 'HTML standard (click to change)', run: () => A.compat() },
     ],
-    rightEls: [theme],
+    rightEls: [window.CraftAccount && CraftAccount.button ? CraftAccount.button() : null, theme].filter(Boolean),
     onHelp: () => (SC.menus.find(([n]) => n === 'Help')[1].find((it) => it.label === 'Getting started') || {}).run?.(),
     getCommands: () => [...menuCommands(), ...ribbonCommands()],
   });

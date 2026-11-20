@@ -1180,6 +1180,8 @@ h2{font-size:32px;margin:0 0 24px}
   const importHooks = [];
   const pageMeta = (pg) => ({ title: (pg && pg.getName && pg.getName()) || 'My site', description: '', lang: 'en', ...(settings.pages[pg && pg.getId()] || {}) });
   function saveSettings() { setDirty(true); try { editor.store(); } catch (e) {} }
+  // the page tester (tester.html, for a logged-in Craft account): this page at every screen size side by side
+  function testDevices() { try { localStorage.setItem('sitecraft-tester-page', fullHtml()); } catch (e) { /* too big for this browser's storage */ } window.open('tester.html?page=built', '_blank'); }
   function fullHtml(page) {
     const pg = page || editor.Pages.getSelected();
     const comp = pg.getMainComponent();
@@ -2406,6 +2408,7 @@ h2{font-size:32px;margin:0 0 24px}
   // =====================================================================
   function exposeApi() {
     window.SC = {
+      testDevices,
       editor, settings, DEVICES, DOCTYPES, INSERTS, TYPES, actions: ACTIONS, refreshHooks, exportHooks, importHooks, menus,
       toast, ask, dialog, field, mk, esc, buildList, closeMenus, fdoc, fwin, editing, target, texty, needTarget, stopEditing, keepEditing,
       insertBlock, tableHtml, tableCtx, withTable, addRow, addCol, delRow, delCol, delTable, parseHtmlFile, setStyle, setTextType, align, moveSel, cutElement,
@@ -2464,7 +2467,7 @@ h2{font-size:32px;margin:0 0 24px}
       { label: 'Phone', run: () => setDevice('Mobile'), checked: () => devSel.value === 'Mobile' },
       { label: 'More sizes… (the list at the top)', run: () => devSel.focus() },
       { label: 'Turn sideways', run: () => document.getElementById('rotate').click(), checked: () => sideways },
-      { label: 'Test on devices… (every screen size side by side)', run: () => { try { localStorage.setItem('sitecraft-tester-page', fullHtml()); } catch (e) { /* too big for this browser's storage */ } window.open('tester.html?page=built', '_blank'); } },
+      { label: 'Test on devices… (every screen size side by side)', run: () => testDevices() },
       '-',
       { label: 'Element outlines', run: () => outlineBtn.click(), checked: () => outlineBtn.getAttribute('aria-pressed') === 'true' },
       { label: 'Preview', run: togglePreview, checked: isPreviewing },
@@ -2681,6 +2684,8 @@ h2{font-size:32px;margin:0 0 24px}
 <script src="js/bwip-js-min.js"></script>
 <script src="js/qrcode-generator.js"></script>
 <script src="js/craft-barcode.js"></script>
+<script src="js/craft-crypto.js"></script>
+<script src="js/craft-account.js"></script>
 <script src="js/sc-ribbon.js"></script>
 <script src="js/range-type.js"></script>
 </body>

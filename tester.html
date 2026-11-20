@@ -13,6 +13,11 @@
   header { position: sticky; top: 0; z-index: 10; background: var(--panel); border-bottom: 1px solid var(--line); padding: 10px 16px; display: grid; gap: 8px; }
   body.capturing header, body.capturing .dev .top button { visibility: hidden; }
   body.capturing header { display: none; }
+  body.locked header, body.locked main { display: none; }
+  #gate { min-height: 100vh; display: grid; place-items: center; padding: 16px; }
+  #gate[hidden] { display: none; }
+  .gcard { max-width: 460px; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 22px 24px; box-shadow: 0 10px 30px rgba(0,0,0,.2); }
+  .gcard h1 { margin: 0 0 8px; } .gcard p { margin: 0 0 14px; }
   .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
   h1 { font-size: 17px; margin: 0 8px 0 0; }
   input, select, button { font: inherit; color: inherit; }
@@ -65,7 +70,7 @@
   @media (max-width: 600px) { header { padding: 8px 10px; } main { padding: 10px; gap: 12px; } }
 </style>
 </head>
-<body>
+<body class="locked">
 <header>
   <div class="row"><h1>Page tester</h1><span class="hint">A page at the screen sizes of phones, folding phones, tablets and computers, side by side: in device frames, with what it holds, as one picture.</span></div>
   <div class="row">
@@ -95,8 +100,23 @@
   <div class="hint" id="note"></div>
 </header>
 <main id="grid"></main>
+<div id="gate" hidden><div class="gcard"><h1>Page tester</h1><p>Your site’s pages, at the screen sizes of phones, folding phones, tablets and computers. Log in with your Craft account to use it.</p><div id="gbtn"></div><p class="hint" id="gnote"></p></div></div>
+<script src="js/craft-crypto.js"></script>
+<script src="js/craft-account.js"></script>
 <script>
+// only for a logged-in Craft account: until then nothing of the site's testing is shown
 (() => {
+  const A = window.CraftAccount; let started = false;
+  const can = () => !!(A && A.user());
+  function gate() {
+    const ok = can(); document.body.classList.toggle('locked', !ok); document.getElementById('gate').hidden = ok;
+    if (!ok) { const g = document.getElementById('gbtn'); if (A && A.button && !g.firstChild) g.append(A.button()); document.getElementById('gnote').textContent = A ? (location.protocol === 'file:' ? 'Opened as a file: open the tester from the web server (…/craft/sitecraft/tester.html) to log in.' : '') : 'The Craft account part is missing from this copy of SiteCraft.'; return; }
+    if (!started) { started = true; window.startPageTester(); }
+  }
+  window.addEventListener('craft-account', () => { if (started && !can()) { location.reload(); return; } gate(); });
+  window.addEventListener('DOMContentLoaded', () => { gate(); if (can() && A.refresh) A.refresh(); }); // (a login that has run out is dropped, and the page locks again)
+})();
+window.startPageTester = () => {
   'use strict';
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -298,7 +318,7 @@
   document.addEventListener('keydown', (e) => { if (!focus || e.target.closest('input,select,textarea')) return; if (e.key === 'Escape') api.all(); if (e.key === 'ArrowLeft') step(-1); if (e.key === 'ArrowRight') step(1); });
   let rt = 0; addEventListener('resize', () => { if (focus && !fscale) { clearTimeout(rt); rt = setTimeout(draw, 250); } });
   draw();
-})();
+};
 </script>
 </body>
 </html>
