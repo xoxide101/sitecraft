@@ -2460,6 +2460,7 @@ h2{font-size:32px;margin:0 0 24px}
       { label: 'Phone', run: () => setDevice('Mobile'), checked: () => devSel.value === 'Mobile' },
       { label: 'More sizes… (the list at the top)', run: () => devSel.focus() },
       { label: 'Turn sideways', run: () => document.getElementById('rotate').click(), checked: () => sideways },
+      { label: 'Test on devices… (every screen size side by side)', run: () => { try { localStorage.setItem('sitecraft-tester-page', fullHtml()); } catch (e) { /* too big for this browser's storage */ } window.open('tester.html?page=built', '_blank'); } },
       '-',
       { label: 'Element outlines', run: () => outlineBtn.click(), checked: () => outlineBtn.getAttribute('aria-pressed') === 'true' },
       { label: 'Preview', run: togglePreview, checked: isPreviewing },

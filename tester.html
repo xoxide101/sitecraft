@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Page tester</title>
+<style>
+  :root { --bg: #eef0f4; --panel: #ffffff; --panel-2: #f4f5f8; --fg: #1d2330; --muted: #6a7285; --line: #d6dae3; --accent: #2f6fdd; --good: #2e9b4f; --bad: #d64545; color-scheme: light; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #14161b; --panel: #1f2129; --panel-2: #2a2d38; --fg: #e8e9ee; --muted: #9aa0b0; --line: #3a3e4c; --accent: #5b8cf0; --good: #4cc070; --bad: #f07070; color-scheme: dark; } }
+  :root[data-theme="dark"] { --bg: #14161b; --panel: #1f2129; --panel-2: #2a2d38; --fg: #e8e9ee; --muted: #9aa0b0; --line: #3a3e4c; --accent: #5b8cf0; --good: #4cc070; --bad: #f07070; color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.4 "Segoe UI", system-ui, sans-serif; }
+  header { position: sticky; top: 0; z-index: 10; background: var(--panel); border-bottom: 1px solid var(--line); padding: 10px 16px; display: grid; gap: 8px; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  h1 { font-size: 17px; margin: 0 8px 0 0; }
+  input, select, button { font: inherit; color: inherit; }
+  input[type=text] { flex: 1 1 260px; min-width: 0; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel-2); }
+  select, button { padding: 6px 11px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel-2); cursor: pointer; }
+  button.main { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chips label { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel-2); cursor: pointer; font-size: 12.5px; }
+  .chips input { margin: 0; }
+  .hint { color: var(--muted); font-size: 12.5px; }
+  main { display: flex; flex-wrap: wrap; gap: 18px; padding: 16px; align-items: flex-start; }
+  .dev { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 8px; display: grid; gap: 6px; }
+  .dev .top { display: flex; gap: 6px; align-items: center; font-size: 12.5px; }
+  .dev .top b { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .dev .top button { padding: 2px 7px; font-size: 12px; }
+  .screen { position: relative; overflow: hidden; border-radius: 6px; background: #fff; outline: 4px solid #222; }
+  .screen iframe { position: absolute; left: 0; top: 0; border: 0; transform-origin: 0 0; background: #fff; }
+  .badge { padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; cursor: pointer; border: 0; }
+  .badge.ok { background: color-mix(in srgb, var(--good) 22%, transparent); color: var(--good); }
+  .badge.cut { background: color-mix(in srgb, var(--bad) 20%, transparent); color: var(--bad); }
+  .badge.na { background: var(--panel-2); color: var(--muted); }
+  .list { font-size: 12px; color: var(--muted); max-width: 100%; overflow-wrap: anywhere; }
+  @media (max-width: 600px) { header { padding: 8px 10px; } main { padding: 10px; gap: 12px; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="row"><h1>Page tester</h1><span class="hint">A page at the screen sizes of phones, folding phones, tablets and computers, side by side.</span></div>
+  <div class="row">
+    <select id="app" aria-label="A Craft app"><option value="">A Craft app…</option></select>
+    <input type="text" id="url" placeholder="Address: ../shiftcraft/ or https://…" aria-label="Address">
+    <button class="main" id="go">Show</button>
+    <button id="again" title="Load every screen again">Reload all</button>
+    <button id="turn" title="Turn every screen sideways (or back)">Turn ⟳</button>
+    <label class="hint">Size <select id="zoom"><option value="0.35">Small</option><option value="0.5" selected>Medium</option><option value="0.75">Large</option><option value="1">Real size</option></select></label>
+  </div>
+  <div class="chips" id="devs"></div>
+  <div class="hint" id="note"></div>
+</header>
+<main id="grid"></main>
+<script>
+(() => {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  // screen sizes in CSS pixels (what a page sees as its width and height)
+  const DEVICES = [
+    ['flipc', 'Flip phone, cover screen', 260, 512], ['flipo', 'Flip phone, open', 412, 915], ['foldc', 'Fold, closed', 344, 882], ['foldo', 'Fold, open', 884, 1104],
+    ['tri1', 'Tri-fold, one panel open', 600, 900], ['tri2', 'Tri-fold, all open', 1008, 1000], ['phone', 'Phone (iPhone size)', 390, 844], ['android', 'Small Android', 360, 800],
+    ['tablet', 'Tablet', 768, 1024], ['tabletl', 'Tablet sideways', 1024, 768], ['laptop', 'Laptop', 1366, 768], ['desktop', 'Desktop', 1920, 1080],
+  ];
+  const APPS = ['shiftcraft', 'accountcraft', 'filecraft', 'icalcraft', 'labelcraft', 'logocraft', 'presscraft', 'barcodecraft', 'clipartcraft', 'imagecraft', '3dcraft', 'sitecraft', 'datacraft'];
+  const KEY = 'sitecraft-tester', load = () => { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { return {}; } }, keep = () => { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) { /* blocked */ } };
+  const st = { url: '', on: ['flipc', 'foldc', 'flipo', 'tri1', 'foldo', 'tablet'], turned: false, zoom: '0.5', ...load() };
+  // SiteCraft's page being built: SiteCraft hands it over (View › Test on devices…)
+  let built = null; try { built = localStorage.getItem('sitecraft-tester-page'); } catch (e) { /* blocked */ }
+  $('app').innerHTML += (built ? '<option value="@built">The page in SiteCraft</option>' : '') + APPS.map((a) => `<option value="../${a}/">${a}</option>`).join('');
+  $('devs').innerHTML = DEVICES.map(([id, n, w, h]) => `<label title="${w} × ${h}"><input type="checkbox" data-dev="${id}" ${st.on.includes(id) ? 'checked' : ''}>${esc(n)} <span class="hint">${w}×${h}</span></label>`).join('');
+  $('url').value = st.url; $('zoom').value = st.zoom;
+  if (new URLSearchParams(location.search).get('page') === 'built' && built) { st.url = '@built'; $('url').value = ''; }
+
+  // what runs past the left or right edge with no way to scroll to it (the page must be on this site to look inside it)
+  function cutOff(win) {
+    const d = win.document, W = win.innerWidth, out = [], seen = new Set();
+    const name = (e) => e.tagName.toLowerCase() + (e.id ? '#' + e.id : '') + (typeof e.className === 'string' && e.className.trim() ? '.' + e.className.trim().split(/\s+/)[0] : '');
+    const reach = (e) => { for (let p = e.parentElement; p && p !== d.documentElement; p = p.parentElement) { const cs = win.getComputedStyle(p); if (/(auto|scroll)/.test(cs.overflowX) && p.scrollWidth > p.clientWidth + 1) { const r = p.getBoundingClientRect(); if (r.left >= -2 && r.right <= W + 2) return true; } } return false; };
+    for (const e of d.querySelectorAll('body *')) {
+      const cs = win.getComputedStyle(e); if (cs.display === 'none' || cs.visibility === 'hidden') continue;
+      const r = e.getBoundingClientRect(); if (r.width < 6 || r.height < 6 || r.bottom < 0) continue;
+      if (!(r.right > W + 2 || r.left < -2)) continue;
+      let p = e.parentElement, inside = false; while (p) { if (seen.has(p)) { inside = true; break; } p = p.parentElement; } if (inside || reach(e)) continue;
+      seen.add(e); out.push({ el: e, what: name(e), text: (e.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 40) });
+    }
+    return { list: out, wide: d.documentElement.scrollWidth > W + 1 };
+  }
+  function draw() {
+    const z = +st.zoom, src = st.url || '';
+    $('grid').innerHTML = '';
+    if (!src) { $('grid').innerHTML = '<p class="hint">Choose a Craft app or type an address, then Show.</p>'; return; }
+    for (const [id, n, w0, h0] of DEVICES.filter((d) => st.on.includes(d[0]))) {
+      const [w, h] = st.turned ? [h0, w0] : [w0, h0];
+      const box = document.createElement('div'); box.className = 'dev';
+      box.innerHTML = `<div class="top"><b title="${esc(n)}">${esc(n)}</b><span class="hint">${w}×${h}</span><button class="badge na" data-b>…</button><button data-open title="Open at full size in a new tab">↗</button></div><div class="screen" style="width:${Math.round(w * z)}px;height:${Math.round(h * z)}px"><iframe title="${esc(n)}" style="width:${w}px;height:${h}px;transform:scale(${z})"></iframe></div><div class="list" data-l></div>`;
+      $('grid').append(box);
+      const f = box.querySelector('iframe'), b = box.querySelector('[data-b]'), l = box.querySelector('[data-l]');
+      let found = null, shown = false;
+      const check = () => { try { const r = cutOff(f.contentWindow); found = r; b.className = 'badge ' + (r.list.length || r.wide ? 'cut' : 'ok'); b.textContent = r.list.length ? `${r.list.length} cut off` : r.wide ? 'wider than the screen' : '✓ fits'; b.title = r.list.length ? 'Show what is cut off' : ''; }
+        catch (e) { b.className = 'badge na'; b.textContent = 'can’t look inside'; b.title = 'A page from another site (or opened as a file) can be shown but not checked: open the tester from the web server the page is on.'; } };
+      f.onload = () => { setTimeout(check, 1500); setTimeout(check, 4000); };
+      if (src === '@built') f.srcdoc = built || '<p>Nothing from SiteCraft yet.</p>'; else f.src = src;
+      b.onclick = () => { if (!found || !found.list.length) return; shown = !shown; found.list.forEach((x) => { x.el.style.outline = shown ? '3px solid #e53935' : ''; x.el.style.outlineOffset = shown ? '-3px' : ''; }); l.innerHTML = shown ? found.list.map((x) => `• ${esc(x.what)}${x.text ? ' “' + esc(x.text) + '”' : ''}`).join('<br>') : ''; };
+      box.querySelector('[data-open]').onclick = () => { if (src === '@built') { const u = URL.createObjectURL(new Blob([built], { type: 'text/html' })); window.open(u, '_blank'); } else window.open(src, '_blank', `width=${w},height=${h}`); };
+    }
+    $('note').textContent = location.protocol === 'file:' ? 'Opened as a file: pages show, but they can be checked only when the tester is opened from the web server (e.g. …/craft/sitecraft/tester.html).' : 'Sizes only: a page here does not know it is on a phone (no touch, no phone browser name), but everything that depends on the screen size is as on the phone.';
+  }
+  $('go').onclick = () => { st.url = $('url').value.trim(); keep(); draw(); };
+  $('url').onkeydown = (e) => { if (e.key === 'Enter') $('go').click(); };
+  $('app').onchange = () => { const v = $('app').value; if (!v) return; $('url').value = v === '@built' ? '' : v; st.url = v; keep(); draw(); };
+  $('again').onclick = draw;
+  $('turn').onclick = () => { st.turned = !st.turned; keep(); draw(); };
+  $('zoom').onchange = () => { st.zoom = $('zoom').value; keep(); draw(); };
+  $('devs').onchange = (e) => { const id = e.target.dataset.dev; if (!id) return; st.on = e.target.checked ? [...new Set([...st.on, id])] : st.on.filter((x) => x !== id); keep(); draw(); };
+  draw();
+})();
+</script>
+</body>
+</html>

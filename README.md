@@ -234,3 +234,7 @@ Open-source libraries it uses are listed with their licences in Credits.
 ## Development notes
 
 How the app is built, the decisions behind it, and known pitfalls: see [NOTES.md](NOTES.md).
+
+## Page tester
+
+`tester.html` (View › **Test on devices…**, or open it on its own) shows a page at the screen sizes of flip phones (cover screen and open), fold phones (closed and open), tri-folds, phones, tablets, a laptop and a desktop, side by side. Give it the page you are building in SiteCraft, any Craft app on the site, or any address. Each screen says **✓ fits** or **N cut off** (what runs past the left or right edge with no way to scroll to it); click it to see those parts outlined in red. **Turn ⟳** turns every screen sideways. Pages can be checked when the tester is opened from the same web server (a page from another site, or the tester opened as a file, is shown but not checked). It shows sizes only: the page does not know it is on a phone (no touch, no phone browser name).
