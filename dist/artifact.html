@@ -5430,7 +5430,15 @@ button.ctb-chip:hover { background: rgba(255,255,255,.3); }
 
 </script>
 <script>
-/* Craft AI settings (window.CraftKeys): where AI runs (local only, both, cloud) and your cloud AI keys, shared by every
+/* Craft AI settings (window.CraftKeys). MASTER COPY in AccountCraft (craft-keys.js); every app with AI keeps its own copy.
+   Three tiers, each with its own light in the title bar and its own activity list:
+     'browser'  AI inside this page (Transformers.js: graphics card by WebGPU, or the processor): no program, no key, nothing sent
+     'local'    an AI program on this computer or your network (Ollama, LM Studio, llama.cpp, Forge…): graphics card or processor
+     'cloud'    a company's AI with your key (Claude, Gemini, GPT, OpenRouter, Together, Runware, Ollama Cloud)
+   Apps say what runs: CraftKeys.track(tier, job, { engine }) or working(tier, on, engine), and activity(tier, { what, engine,
+   model, device, ms, ok, sent, came, provider }). Logged in to AccountCraft, the keys come from your account (unlocked into
+   this browser at login) and every cloud use is noted against its key (only the key's ID is kept).
+   Where AI runs (local only, both, cloud) and your cloud AI keys are shared by every
    Craft app in this browser, saved to a file and loaded back (another browser or computer). One format for every app (each keeps its own copy of this file):
      { craft: 'ai-keys', version: 1, saved, keys: { anthropic, gemini, openai, openrouter, runware }, workspace? }
    or, locked with a password: { craft: 'ai-keys', version: 1, saved, locked: { salt, iv, data } } where data is that same
@@ -5492,9 +5500,9 @@ button.ctb-chip:hover { background: rgba(255,255,255,.3); }
   }
   // ------------------------------------------------------------------ the keys every Craft app shares in this browser
   // (apps opened from files on this computer share the browser's storage, so a key typed in one is there in all)
-  const SHARED = 'craft-ai-keys', PROVIDERS = ['anthropic', 'gemini', 'openai', 'openrouter', 'runware'];
-  const NAMES = { anthropic: 'Claude (Anthropic)', gemini: 'Gemini (Google)', openai: 'GPT (OpenAI)', openrouter: 'OpenRouter (many models)', runware: 'Runware (pictures)' };
-  const LINKS = { anthropic: 'https://console.anthropic.com/settings/keys', gemini: 'https://aistudio.google.com/apikey', openai: 'https://platform.openai.com/api-keys', openrouter: 'https://openrouter.ai/keys', runware: 'https://my.runware.ai/keys' };
+  const SHARED = 'craft-ai-keys', PROVIDERS = ['anthropic', 'gemini', 'openai', 'openrouter', 'together', 'runware', 'ollama'];
+  const NAMES = { anthropic: 'Claude (Anthropic)', gemini: 'Gemini (Google)', openai: 'GPT (OpenAI)', openrouter: 'OpenRouter (many models)', together: 'Together.ai', runware: 'Runware (pictures)', ollama: 'Ollama Cloud' };
+  const LINKS = { anthropic: 'https://console.anthropic.com/settings/keys', gemini: 'https://aistudio.google.com/apikey', openai: 'https://platform.openai.com/api-keys', openrouter: 'https://openrouter.ai/keys', together: 'https://api.together.ai/settings/api-keys', runware: 'https://my.runware.ai/keys', ollama: 'https://ollama.com/settings/keys' };
   // where AI runs, for every app: 'local' (only this computer, nothing sent), 'both', or 'cloud'
   const MODE = 'craft-ai-mode', MODES = [['local', 'Local only', 'Only the AI on this computer: nothing is sent anywhere'], ['both', 'Both', 'This computer’s AI, and cloud AI where you ask for it or where it does better'], ['cloud', 'Cloud', 'The cloud AI does the work (with your keys)']];
   function mode() { try { return localStorage.getItem(MODE) || 'both'; } catch (e) { return 'both'; } }
@@ -5529,8 +5537,10 @@ button.ctb-chip:hover { background: rgba(255,255,255,.3); }
   // ------------------------------------------------------------------ activity (local and cloud AI) and debug
   // Apps tell what their AI did: CraftKeys.activity('local' | 'cloud', { what, model, ms, ok, sent, came }). The debug list
   // catches errors and warnings by itself. All of it is kept for this session only, and never holds a key.
-  const ACT = { local: [], cloud: [], debug: [] }, cap = (a) => { if (a.length > 300) a.shift(); };
-  function activity(where, e) { const list = ACT[where] || ACT.local; list.push({ at: Date.now(), ...e }); cap(list); window.dispatchEvent(new CustomEvent('craft-activity')); }
+  const ACT = { browser: [], local: [], cloud: [], debug: [] }, cap = (a) => { if (a.length > 300) a.shift(); };
+  function activity(where, e) { const list = ACT[where] || ACT.local; list.push({ at: Date.now(), ...e }); cap(list); window.dispatchEvent(new CustomEvent('craft-activity'));
+    // a cloud use with a key: AccountCraft notes how that key did (only its ID is kept)
+    if (where === 'cloud' && e && e.provider && window.CraftAccount && CraftAccount.keyUse) { const k = shared().keys[e.provider]; if (k) CraftAccount.keyUse((document.title.split(/[\s–—-]/)[0] || 'Craft').trim(), e.provider, k, e.status || (e.ok === false ? 0 : 200), e.ok === false ? (e.came || 'failed') : ''); } }
   const dbg = (level, args) => { ACT.debug.push({ at: Date.now(), level, text: args.map((a) => (a instanceof Error ? a.stack || a.message : typeof a === 'object' ? (() => { try { return JSON.stringify(a); } catch (e) { return String(a); } })() : String(a))).join(' ').replace(/(sk-ant-|sk-|AIza)[\w-]{8,}/g, '$1…') }); cap(ACT.debug); window.dispatchEvent(new CustomEvent('craft-activity')); };
   for (const level of ['error', 'warn']) { const real = console[level].bind(console); console[level] = (...a) => { dbg(level, a); real(...a); }; }
   window.addEventListener('error', (e) => dbg('error', [e.message + (e.filename ? ` (${e.filename.split('/').pop()}:${e.lineno})` : '')]));
@@ -5538,17 +5548,17 @@ button.ctb-chip:hover { background: rgba(255,255,255,.3); }
   const hasErrors = () => ACT.debug.some((d) => d.level === 'error');
   function openActivity(tab = 'local') {
     // ImageCraft has its own windows for these
-    const IC = window.IC; if (IC && IC.openLocalLog && IC.openCloudLog && IC.openDebug) { ({ local: IC.openLocalLog, cloud: IC.openCloudLog, debug: IC.openDebug })[tab](); return; }
+    const IC = window.IC; if (IC && IC.openLocalLog && IC.openCloudLog && IC.openDebug && tab !== 'browser') { ({ local: IC.openLocalLog, cloud: IC.openCloudLog, debug: IC.openDebug })[tab](); return; }
     let back = document.querySelector('.craft-activity'); if (back) back.remove();
     back = document.createElement('div'); back.className = 'craft-activity'; back.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;box-sizing:border-box;z-index:2147483000;display:grid;place-items:center;padding:20px;background:rgba(0,0,0,.45)';
     const esc = (t) => String(t ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]), time = (t) => new Date(t).toLocaleTimeString();
     const row = (e) => (tab === 'debug' ? `<div style="padding:5px 0;border-bottom:1px solid var(--line,#444)"><small style="opacity:.7">${time(e.at)} · ${e.level}</small><pre style="margin:2px 0 0;white-space:pre-wrap;font:12px ui-monospace,monospace;color:${e.level === 'error' ? '#f87171' : 'inherit'}">${esc(e.text)}</pre></div>`
-      : `<div style="padding:6px 0;border-bottom:1px solid var(--line,#444)"><b>${esc(e.what || 'AI')}</b> <small style="opacity:.75">${time(e.at)}${e.model ? ' · ' + esc(e.model) : ''}${e.ms != null ? ` · ${(e.ms / 1000).toFixed(1)} s` : ''} · ${e.ok === false ? '<span style="color:#f87171">failed</span>' : 'OK'}</small>${e.sent ? `<div style="font-size:12.5px;opacity:.85">Sent: ${esc(e.sent)}</div>` : ''}${e.came ? `<div style="font-size:12.5px">Came back: ${esc(e.came)}</div>` : ''}</div>`);
+      : `<div style="padding:6px 0;border-bottom:1px solid var(--line,#444)"><b>${esc(e.what || 'AI')}</b> <small style="opacity:.75">${time(e.at)}${e.engine ? ' · ' + esc(e.engine) : ''}${e.model ? ' · ' + esc(e.model) : ''}${e.device ? ' · ' + esc(e.device) : ''}${e.ms != null ? ` · ${(e.ms / 1000).toFixed(1)} s` : ''} · ${e.ok === false ? '<span style="color:#f87171">failed</span>' : 'OK'}</small>${e.sent ? `<div style="font-size:12.5px;opacity:.85">Sent: ${esc(e.sent)}</div>` : ''}${e.came ? `<div style="font-size:12.5px">Came back: ${esc(e.came)}</div>` : ''}</div>`);
     const draw = () => { const list = ACT[tab].slice().reverse();
       back.innerHTML = `<div role="dialog" aria-modal="true" aria-label="Activity" style="width:min(720px,100%);max-height:calc(100vh - 40px);display:grid;grid-template-rows:auto auto 1fr auto;gap:10px;padding:18px;border-radius:12px;border:1px solid var(--line,#555);background:var(--panel,#222);color:var(--fg,#eee);font:14px system-ui,sans-serif">
         <div style="display:flex;align-items:center;gap:10px"><b style="font-size:16px;flex:1">Activity</b><button type="button" data-a="close" class="btn outline">Close</button></div>
-        <div role="tablist" style="display:flex;gap:6px">${[['local', 'Local AI'], ['cloud', 'Cloud AI'], ['debug', 'Debug']].map(([k, l]) => `<button type="button" role="tab" data-tab="${k}" aria-selected="${tab === k}" class="btn ${tab === k ? 'primary' : 'outline'}">${l} (${ACT[k].length})</button>`).join('')}</div>
-        <div style="overflow:auto;min-height:120px">${list.length ? list.map(row).join('') : `<p style="opacity:.75">${tab === 'local' ? 'Nothing done by the AI on this computer yet this session.' : tab === 'cloud' ? 'Nothing sent to a cloud AI yet this session.' : 'No errors or warnings this session.'}</p>`}</div>
+        <div role="tablist" style="display:flex;gap:6px">${[['browser', 'In this browser'], ['local', 'This computer / network'], ['cloud', 'Cloud'], ['debug', 'Debug']].map(([k, l]) => `<button type="button" role="tab" data-tab="${k}" aria-selected="${tab === k}" class="btn ${tab === k ? 'primary' : 'outline'}">${l} (${ACT[k].length})</button>`).join('')}</div>
+        <div style="overflow:auto;min-height:120px">${list.length ? list.map(row).join('') : `<p style="opacity:.75">${tab === 'browser' ? 'Nothing done by the AI inside this page yet this session.' : tab === 'local' ? 'Nothing done by an AI program on this computer or your network yet this session.' : tab === 'cloud' ? 'Nothing sent to a cloud AI yet this session.' : 'No errors or warnings this session.'}</p>`}</div>
         <div style="display:flex;gap:8px;align-items:center"><button type="button" data-a="copy" class="btn outline">Copy all</button><button type="button" data-a="clear" class="btn outline">Clear</button><small style="opacity:.7">This session only; keys are never shown or kept here.</small></div></div>`; };
     const shut = () => { back.remove(); window.removeEventListener('craft-activity', draw); };
     back.addEventListener('click', (e) => { if (e.target === back || e.target.closest('[data-a=close]')) return shut(); const t = e.target.closest('[data-tab]'); if (t) { tab = t.dataset.tab; draw(); return; }
@@ -5560,12 +5570,12 @@ button.ctb-chip:hover { background: rgba(255,255,255,.3); }
   // ------------------------------------------------------------------ working now: a light beside the computer (local AI)
   // and beside the cloud (cloud AI) while something is being worked out or sent. Apps call working('local' | 'cloud', true)
   // when they start and false when done (or track(where, promise)).
-  const WORK = { local: 0, cloud: 0 };
-  function working(where, on) { WORK[where] = Math.max(0, (WORK[where] || 0) + (on ? 1 : -1)); window.dispatchEvent(new CustomEvent('craft-working')); }
+  const WORK = { browser: 0, local: 0, cloud: 0 }, NOW = { browser: '', local: '', cloud: '' };   // NOW: the engine working (or last used) in each tier
+  function working(where, on, engine) { WORK[where] = Math.max(0, (WORK[where] || 0) + (on ? 1 : -1)); if (engine) NOW[where] = engine; window.dispatchEvent(new CustomEvent('craft-working')); }
   // (an app that counts its own running jobs just says how many)
-  function setWorking(where, n) { if ((WORK[where] || 0) === n) return; WORK[where] = Math.max(0, n); window.dispatchEvent(new CustomEvent('craft-working')); }
-  async function track(where, job) { working(where, true); try { return await (typeof job === 'function' ? job() : job); } finally { working(where, false); } }
-  if (!document.getElementById('craft-ai-anim')) { const st = document.createElement('style'); st.id = 'craft-ai-anim'; st.textContent = '@keyframes craftAiPulse { from { opacity: .35 } to { opacity: 1 } } .craft-ai-work.on { color: #22c55e; animation: craftAiPulse .6s ease-in-out infinite alternate; } .craft-ai-work[data-w=cloud].on { color: #38bdf8; }'; (document.head || document.documentElement).append(st); }
+  function setWorking(where, n, engine) { if (engine) NOW[where] = engine; if ((WORK[where] || 0) === n) return; WORK[where] = Math.max(0, n); window.dispatchEvent(new CustomEvent('craft-working')); }
+  async function track(where, job, o = {}) { working(where, true, o.engine); try { return await (typeof job === 'function' ? job() : job); } finally { working(where, false); } }
+  if (!document.getElementById('craft-ai-anim')) { const st = document.createElement('style'); st.id = 'craft-ai-anim'; st.textContent = '@keyframes craftAiPulse { from { opacity: .35 } to { opacity: 1 } } .craft-ai-work.on { color: #22c55e; animation: craftAiPulse .6s ease-in-out infinite alternate; } .craft-ai-work[data-w=cloud].on { color: #38bdf8; } .craft-ai-work[data-w=browser].on { color: #f59e0b; }'; (document.head || document.documentElement).append(st); }
   // ------------------------------------------------------------------ the little switch in the title bar
   // computer (local only) · computer + cloud (both) · cloud, and a key that opens the AI settings. It puts itself just
   // before the title bar's search box in any Craft app that loads this file.
@@ -5573,24 +5583,27 @@ button.ctb-chip:hover { background: rgba(255,255,255,.3); }
     local: '<rect x="2.5" y="4" width="15" height="10" rx="1.5"/><path d="M7 17h6M10 14v3"/>',
     both: '<rect x="1.5" y="7" width="11" height="8" rx="1.2"/><path d="M5 18h4M7 15v3"/><path d="M14 12.5h3.2a2.3 2.3 0 0 0 .3-4.6 3.2 3.2 0 0 0-6.1-.4" />',
     cloud: '<path d="M6 16h8.5a3.5 3.5 0 0 0 .5-7 4.8 4.8 0 0 0-9.2 1.2A2.9 2.9 0 0 0 6 16z"/>',
+    page: '<rect x="2.5" y="3.5" width="15" height="13" rx="1.5"/><path d="M2.5 7h15M5 5.3h.01M7 5.3h.01"/>',
     key: '<circle cx="7" cy="12" r="3.2"/><path d="M10.2 12H18M15 12v2.8M17.5 12v2"/>',
     data: '<path d="M7 15V5M4.5 7.5 7 5l2.5 2.5M13 5v10M10.5 12.5 13 15l2.5-2.5"/>',
     bug: '<rect x="6.5" y="7" width="7" height="9" rx="3.5"/><path d="M8 7a2 2 0 0 1 4 0M10 9.5V16M3.5 9.5l3 1.2M16.5 9.5l-3 1.2M3 13h3.5M17 13h-3.5M4 16.8l2.8-1.5M16 16.8l-2.8-1.5"/>',
   };
   const ico = (k) => `<svg viewBox="0 0 20 20" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[k]}</svg>`;
+  const TIER = { browser: 'AI in this page (no program, nothing sent)', local: 'AI program on this computer or your network', cloud: 'Cloud AI (your key)' };
+  const lightTitle = (w) => `${TIER[w]}: ${WORK[w] ? 'working now' : 'idle'}${NOW[w] ? ` · ${WORK[w] ? '' : 'last: '}${NOW[w]}` : ''}`;
   function chip(small) {
     const el = document.createElement('div'); el.className = small ? 'craft-ai-bottom' : 'ctb-ai'; el.setAttribute('role', 'group'); el.setAttribute('aria-label', 'Where AI runs');
     el.style.cssText = 'display:inline-flex;align-items:center;gap:1px;margin-right:8px;padding:2px;border-radius:8px;background:rgba(0,0,0,.18)';
     const paint = () => { const m = mode(), has = Object.keys(shared().keys).length;
-      const light = (w) => `<span class="craft-ai-work${WORK[w] ? ' on' : ''}" data-w="${w}" title="${w === 'local' ? 'The AI on this computer' : 'Cloud AI'}: ${WORK[w] ? 'working now' : 'idle'}" style="display:grid;place-items:center;width:16px;height:24px;opacity:${WORK[w] ? 1 : 0.3}">${ico('data').replace('width="17" height="17"', 'width="14" height="14"')}</span>`;
-      el.innerHTML = light('local') + MODES.map(([k, l, t]) => `<button type="button" data-mode="${k}" aria-pressed="${m === k}" title="${l}: ${t}" style="display:grid;place-items:center;width:28px;height:24px;border:0;border-radius:6px;cursor:pointer;color:inherit;background:${m === k ? 'rgba(255,255,255,.28)' : 'transparent'};opacity:${m === k ? 1 : 0.7}">${ico(k)}</button>`).join('') + light('cloud')
+      const light = (w) => `<span class="craft-ai-work${WORK[w] ? ' on' : ''}" data-w="${w}" title="${lightTitle(w)}" style="display:grid;place-items:center;width:16px;height:24px;opacity:${WORK[w] ? 1 : 0.3}">${ico(w === 'browser' ? 'page' : 'data').replace('width="17" height="17"', 'width="14" height="14"')}</span>`;
+      el.innerHTML = light('browser') + light('local') + MODES.map(([k, l, t]) => `<button type="button" data-mode="${k}" aria-pressed="${m === k}" title="${l}: ${t}" style="display:grid;place-items:center;width:28px;height:24px;border:0;border-radius:6px;cursor:pointer;color:inherit;background:${m === k ? 'rgba(255,255,255,.28)' : 'transparent'};opacity:${m === k ? 1 : 0.7}">${ico(k)}</button>`).join('') + light('cloud')
         + `<button type="button" data-keys title="AI settings: where AI runs and your cloud keys${has ? ` (${has} saved)` : ' (none saved yet)'}" style="display:grid;place-items:center;width:28px;height:24px;border:0;border-radius:6px;cursor:pointer;color:inherit;background:transparent;opacity:${has ? 1 : 0.7}">${ico('key')}</button>`
         + `<button type="button" data-activity title="Activity: what the AI here and in the cloud did, and the debug messages${hasErrors() ? ' (there are errors)' : ''}" style="position:relative;display:grid;place-items:center;width:28px;height:24px;border:0;border-radius:6px;cursor:pointer;color:inherit;background:transparent;opacity:.85">${ico('bug')}${hasErrors() ? '<i style="position:absolute;top:3px;right:4px;width:6px;height:6px;border-radius:50%;background:#ef4444"></i>' : ''}</button>`;
       if (small) { el.style.cssText = 'display:inline-flex;align-items:center;gap:1px;margin-left:auto;padding:1px;border-radius:7px;background:rgba(127,127,127,.12)'; if (document.getElementById('st-aimode')) el.querySelectorAll('[data-mode]').forEach((b) => { b.hidden = true; }); } el._dot = hasErrors(); };
     el.addEventListener('click', (e) => { const b = e.target.closest('[data-mode]'); if (b) { setMode(b.dataset.mode); return; } if (e.target.closest('[data-keys]')) open({ app: document.title.split(/[–—-]/)[0].trim() || 'Craft' }); if (e.target.closest('[data-activity]')) openActivity(hasErrors() ? 'debug' : 'local'); });
     window.addEventListener('craft-keys', paint); window.addEventListener('craft-activity', () => { if (hasErrors() !== el._dot) paint(); });
     // the two lights only (not the whole switch) as work starts and stops
-    window.addEventListener('craft-working', () => { el.querySelectorAll('.craft-ai-work').forEach((w) => { const on = !!WORK[w.dataset.w]; w.classList.toggle('on', on); w.style.opacity = on ? 1 : 0.3; w.title = `${w.dataset.w === 'local' ? 'The AI on this computer' : 'Cloud AI'}: ${on ? 'working now' : 'idle'}`; }); }); window.addEventListener('storage', (e) => { if (e.key === MODE || e.key === SHARED) paint(); });
+    window.addEventListener('craft-working', () => { el.querySelectorAll('.craft-ai-work').forEach((w) => { const on = !!WORK[w.dataset.w]; w.classList.toggle('on', on); w.style.opacity = on ? 1 : 0.3; w.title = lightTitle(w.dataset.w); }); }); window.addEventListener('storage', (e) => { if (e.key === MODE || e.key === SHARED) paint(); });
     paint(); return el;
   }
   // at the top (before the title bar's search box) and at the bottom (the end of the status bar; put back when the app
@@ -5604,7 +5617,7 @@ button.ctb-chip:hover { background: rgba(255,255,255,.3); }
   // a change in another tab or app (same browser) shows here too
   // (forgetting in another app or tab: every app forgets its own copy too)
   window.addEventListener('storage', (e) => { if (e.key === MODE || e.key === SHARED) window.dispatchEvent(new CustomEvent('craft-keys')); if (e.key === 'craft-ai-forget') window.dispatchEvent(new CustomEvent('craft-keys', { detail: { forget: true } })); });
-  window.CraftKeys = { save, load, shared, share, open, mode, setMode, activity, openActivity, working, track, setWorking, PROVIDERS, NAMES };
+  window.CraftKeys = { save, load, shared, share, open, mode, setMode, activity, openActivity, working, track, setWorking, busy: () => ({ ...WORK }), engines: () => ({ ...NOW }), log: () => ACT, PROVIDERS, NAMES, TIERS: TIER, version: 2 };
 })();
 
 </script>
@@ -6370,10 +6383,14 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
      CraftAccount.keyUse(app, provider, key, status, note)          (an app notes how a key did: only the key's ID is kept)
      A site's AccountCraft can name the one account server for every Craft app (Site › One account server): the apps follow it.
      CraftAccount.button(el)             a Log in / your-name button that opens the account page
+     Home: CraftAccount.setHome(name) / revokeHome(id) / isHome() / homes(). A computer set as home keeps a key in this
+     browser (localStorage 'craft-home'); every check uses the key up and brings a new one (a copied key stops working and
+     revokes the home). Away from home, a login ends after 30 minutes without anyone at the keyboard (in any Craft tab;
+     the account server ends it too, also when the page is closed).
    Changes fire window 'craft-account' (also when another app or tab logs in or out). */
 (function () {
   'use strict';
-  const STATE = 'craft-account', SERVER = 'craft-account-server', KEYS = 'craft-ai-keys', ROUNDS = 250000;
+  const STATE = 'craft-account', SERVER = 'craft-account-server', KEYS = 'craft-ai-keys', HOME = 'craft-home', ACT = 'craft-active', ROUNDS = 250000;
   const enc = new TextEncoder(), dec = new TextDecoder();
   const b64 = (u8) => btoa(String.fromCharCode(...u8)), unb64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
   const read = (k) => { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { return null; } };
@@ -6398,7 +6415,7 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
     let r; try { r = await fetch(server() + '/api/' + path, { method, headers: h, body: body === undefined ? undefined : JSON.stringify(body) }); }
     catch (e) { throw new Error('The account server could not be reached.'); }
     const j = await r.json().catch(() => ({}));
-    if (r.status === 401 && j.login && s) { write(STATE, null); tell(); }
+    if (r.status === 401 && j.login && s) { write(STATE, null); tell(); if (j.idle) setTimeout(() => idleNote(), 0); }
     if (!r.ok) { const err = new Error(j.error || `The account server said ${r.status}.`); err.status = r.status; err.info = j; throw err; }
     return j;
   }
@@ -6425,7 +6442,7 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
 
   async function login(name, password) {
     const r = await api('POST', 'login', { name, password });
-    write(STATE, { server: server(), token: r.token, user: r.user }); tell();
+    write(STATE, { server: server(), token: r.token, user: r.user }); markActive(true); await homeCheck(); tell();
     // your keys come with you; the first time, the keys this browser already has go into the vault
     try { const v = await unlockKeys(password); if (!v) { const l = localKeys(); if (Object.keys(l.keys).length && hasCrypto()) await lockKeys(l, password); } }
     catch (e) { console.warn('Craft account: the keys could not be unlocked', e); }
@@ -6442,12 +6459,57 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
   const all = (app) => api('GET', `data/${app}`);
   const remove = (app, key) => api('DELETE', `data/${app}/${encodeURIComponent(key)}`);
 
+  // ------------------------------------------------------------------ home, and logging out when nobody is there
+  const isHome = () => { const s = state(); return !!(s && s.token && s.server === server() && s.home); };
+  const setState = (k, v) => { const s = state(); if (s) { s[k] = v; write(STATE, s); } };
+  async function homeCheck() {
+    const h = read(HOME);
+    if (!h || h.server !== server() || !h.key) { if (isHome()) { setState('home', null); tell(); } return null; }
+    let r; try { r = await api('POST', 'home/check', { key: h.key }); } catch (e) { return isHome() ? state().home : null; }   // (not reachable: as it was)
+    if (r.key) { const now = read(HOME); if (now && now.key === h.key) write(HOME, { ...h, key: r.key, id: r.home.id, name: r.home.name }); }
+    if (r.home) { setState('home', r.home); tell(); return r.home; }
+    if (r.ended) write(HOME, null);
+    setState('home', null); tell();
+    if (r.ended) setTimeout(() => note('🏠 Not home any more', esc(r.why || 'This computer is no longer set as home.') + '<br><br>Away from home you are logged out after 30 minutes without activity.'), 0);
+    return null;
+  }
+  async function setHome(name) {
+    const r = await api('POST', 'home/set', { name: name || 'Home computer' });
+    write(HOME, { server: server(), key: r.key, id: r.home.id, name: r.home.name }); setState('home', r.home); tell(); return r.home;
+  }
+  async function revokeHome(id) {
+    const h = read(HOME), here = id || (h && h.id);
+    if (here) await api('DELETE', 'me/homes/' + encodeURIComponent(here));
+    if (!id || (h && h.id === id)) { write(HOME, null); setState('home', null); markActive(true); }
+    tell();
+  }
+  const homes = () => api('GET', 'me/homes');
+  // activity: any Craft tab on this site notes when someone last used it (mouse, keys, touch); the server hears it now and then
+  let idleMin = 30, lastPing = 0;
+  const lastActive = () => { const v = +(localStorage.getItem(ACT) || 0); return v || Date.now(); };
+  function markActive(force) {
+    const n = Date.now(); try { if (force || n - lastActive() > 15000) localStorage.setItem(ACT, String(n)); } catch (e) { /* blocked */ }
+    if (user() && (force || n - lastPing > 240000)) { lastPing = n; api('POST', 'active').then((r) => { if (r && r.idleMinutes) idleMin = r.idleMinutes; }).catch(() => {}); }
+  }
+  ['pointerdown', 'keydown', 'wheel', 'touchstart'].forEach((e) => window.addEventListener(e, () => markActive(false), { passive: true, capture: true }));
+  let moved = 0; window.addEventListener('mousemove', () => { const n = Date.now(); if (n - moved > 20000) { moved = n; markActive(false); } }, { passive: true });
+  function idleNote() { note('Logged out', `Nobody was at the keyboard for ${idleMin} minutes and this computer is not set as home, so you were logged out of every Craft app.<br><br>At home? Log in again and choose <b>🏠 Set this computer as home</b> in your account menu.`, true); }
+  async function idleCheck() {
+    if (!user() || isHome()) return;
+    if (Date.now() - lastActive() > idleMin * 60000) { await logout({ keepKeys: false }); idleNote(); }
+  }
+  setInterval(idleCheck, 30000);
+  function note(title, html, login) {
+    const b = box(`<h3>${title}</h3><p class="dim" style="margin:0 0 10px;font-size:13.5px">${html}</p><div class="row"><button type="button" data-x>OK</button>${login ? '<button type="button" class="main" data-f="in">Log in</button>' : ''}</div>`);
+    const i = b.querySelector('[data-f=in]'); if (i) i.onclick = () => { b.remove(); loginDialog(); };
+  }
+
   // a Log in / your-name button for an app's title bar: it opens the account page (log in there once for every app)
   function button(el) {
     if (!el) { el = document.createElement('button'); el.type = 'button'; }
     el.classList.add('craft-acct-btn');
     if (!document.getElementById('craft-acct-css')) { const s = document.createElement('style'); s.id = 'craft-acct-css'; s.textContent = '.craft-acct-btn{border:1px solid rgba(255,255,255,.55);background:transparent;color:#fff;border-radius:14px;padding:3px 11px;font:inherit;font-size:12.5px;cursor:pointer;white-space:nowrap;max-width:180px;overflow:hidden;text-overflow:ellipsis}.craft-acct-btn:hover{background:rgba(255,255,255,.2)}.craft-acct-btn[hidden]{display:none}'; document.head.append(s); }
-    const draw = () => { const u = user(); el.textContent = u ? `👤 ${u.display || u.name}` : 'Log in'; el.title = u ? `Logged in as ${u.name}: your account, keys and settings` : 'Log in for your own settings, keys and saved work in every Craft app (the apps work without it too)'; };
+    const draw = () => { const u = user(), hm = isHome(); el.textContent = u ? `${hm ? '🏠' : '👤'} ${u.display || u.name}` : 'Log in'; el.title = u ? `Logged in as ${u.name}: your account, keys and settings` + (hm ? `\n🏠 This computer is set as home (${state().home.name}): you stay logged in. Revoke it in the account menu.` : `\nNot a home computer: logged out after ${idleMin} minutes without activity.`) : 'Log in for your own settings, keys and saved work in every Craft app (the apps work without it too)'; };
     el.addEventListener('click', () => (user() ? accountMenu(el) : loginDialog()));
     window.addEventListener('craft-account', draw); draw(); return el;
   }
@@ -6496,9 +6558,20 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
   }
   function accountMenu() {
     const u = user(), b = box(`<h3>👤 ${esc(u.display || u.name)}</h3><p class="dim" style="margin:0 0 10px">Logged in as <b>${esc(u.name)}</b>${u.role === 'owner' ? ' (main site admin)' : u.role === 'admin' ? ' (admin)' : ''} at ${esc(server().replace(/\/account\.php$/, ''))}.</p>
+      <div data-f="home" style="margin:0 0 10px;padding:8px 10px;border:1px solid var(--line,#3a3e4c);border-radius:8px"></div>
       <label style="display:flex;gap:6px;align-items:center"><input type="checkbox" data-f="forget" checked style="width:auto"> Forget my keys in this browser when I log out</label>
       <div class="row"><button type="button" data-f="page" style="margin-right:auto">My account…</button><button type="button" data-x>Close</button><button type="button" class="main" data-f="out">Log out</button></div>`);
     b.querySelector('[data-f=page]').addEventListener('click', () => { window.open(pageUrl(), 'craft-account'); b.remove(); });
+    const hb = b.querySelector('[data-f=home]');
+    const drawHome = () => {
+      const hm = isHome() && state().home;
+      hb.innerHTML = hm ? `🏠 <b>This computer is set as home</b> (${esc(hm.name)}): you stay logged in here.<div class="row" style="justify-content:flex-start"><button type="button" data-f="rv">Revoke home</button><span class="dim">its key is ended and can never be used again</span></div>`
+        : `<b>Not a home computer:</b> you are logged out after ${idleMin} minutes without activity.<div class="row" style="justify-content:flex-start"><input data-f="hn" placeholder="Name it (Home PC, Laptop…)" style="flex:1;min-width:140px"><button type="button" class="main" data-f="sh">🏠 Set this computer as home</button></div>`;
+      const rv = hb.querySelector('[data-f=rv]'), sh = hb.querySelector('[data-f=sh]');
+      if (rv) rv.onclick = async () => { rv.disabled = true; try { await revokeHome(); } catch (e) { hb.insertAdjacentHTML('beforeend', `<div class="bad">${esc(e.message)}</div>`); } drawHome(); };
+      if (sh) sh.onclick = async () => { sh.disabled = true; try { await setHome(hb.querySelector('[data-f=hn]').value.trim()); } catch (e) { hb.insertAdjacentHTML('beforeend', `<div class="bad">${esc(e.message)}</div>`); } drawHome(); };
+    };
+    drawHome();
     b.querySelector('[data-f=out]').addEventListener('click', async () => { await logout({ keepKeys: !b.querySelector('[data-f=forget]').checked }); b.remove(); });
   }
 
@@ -6521,7 +6594,7 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
   let was = user() && user().id;
   window.addEventListener('craft-account', () => { const now = user() && user().id; if (now && now !== was) pullShared(); was = now; });
   // on opening: is the login still good (ended elsewhere, or switched off)? then your shared settings
-  if (user()) refresh().then((r) => { if (r) pullShared(); });
+  if (user()) { if (!isHome() && Date.now() - lastActive() > idleMin * 60000) { setTimeout(idleCheck, 0); } else { markActive(true); homeCheck().then(() => refresh()).then((r) => { if (r) pullShared(); }); } }
 
   const allowed = (app) => { const u = user(); return !u || !Array.isArray(u.apps) || u.apps.includes(app); };   // (an app not given to this user keeps nothing in the account)
   // ------------------------------------------------------------------ key use: which app used which key, and how it went
@@ -6561,7 +6634,87 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
       else if (had) { localStorage.removeItem(HOME); if (set === had) { localStorage.removeItem(SERVER); tell(); } }
     } catch (err) { /* not there */ }
   })();
-  window.CraftAccount = { user, server, pageUrl, button, loginDialog, api, allowed, login, signup, logout, changePassword, refresh, get, put, all, remove, lockKeys, unlockKeys, localKeys, useKeys, hasCrypto, lock, unlock, keyUse, keyId, choosePassword };
+  window.CraftAccount = { user, server, pageUrl, button, loginDialog, api, allowed, login, signup, logout, changePassword, refresh, get, put, all, remove, lockKeys, unlockKeys, localKeys, useKeys, hasCrypto, lock, unlock, keyUse, keyId, choosePassword, isHome, setHome, revokeHome, homes, homeCheck };
+})();
+
+</script>
+<script>
+/* Craft rail (window.CraftRail): a slim bar down the left of every Craft app, to go from one app to another.
+     Top: the unified apps (one account; your work saved on the server too: AccountCraft, PluginsCraft (the mini tools), ShiftCraft, ICalCraft, ClipArtCraft,
+          ImageCraft, BarcodeCraft).  Bottom: the other apps (they keep their work on this computer).
+   Logged in on a web address, it shows the apps on that site your account may use (AccountCraft's api/apps); otherwise the
+   usual list. The app you are in is marked. The bar folds to a thin edge (remembered). Each app keeps what it has as you
+   work; going to another app first sends 'craft-leave' (apps that keep things on leaving do it then).
+   Each app keeps its own copy (from AccountCraft): include it after craft-account.js. */
+(function () {
+  'use strict';
+  if (window.CraftRail || window.top !== window) return;   // once, and not inside a frame
+  const UNIFIED = [['accountcraft', 'AccountCraft', '👤', 'your account: people, companies, locations, keys'], ['pluginscraft', 'PluginsCraft', '🧩', 'mini tools: domains, DNS, weather, encoders, passwords'], ['shiftcraft', 'ShiftCraft', '📅', 'schedules'], ['icalcraft', 'ICalCraft', '🗓', 'calendars: check, change, share'], ['filecraft', 'FileCraft', '📁', 'your files from every app'], ['emailcraft', 'EmailCraft', '✉', 'your mail from every account'], ['labelcraft', 'LabelCraft', '🏷', 'labels'], ['logocraft', 'LogoCraft', '🔰', 'logos and seals'], ['presscraft', 'PressCraft', '📰', 'signs, cards, newsletters'],
+    ['clipartcraft', 'ClipArtCraft', '🖼', 'clip-art library'], ['imagecraft', 'ImageCraft', '🎨', 'pictures: restore, convert'], ['barcodecraft', 'BarcodeCraft', '▥', 'barcodes and QR codes'], ['sitecraft', 'SiteCraft', '🌐', 'web sites'], ['3dcraft', '3DCraft', '🧊', '3D titles and logos']];
+  // ArtCraft's apps (storytold), each with the Craft bar round it: the account and My files
+  const ARTCRAFT = [['wordcraft', 'WordCraft', '📝', 'documents'], ['deckcraft', 'DeckCraft', '🖥', 'slides'], ['pdfcraft', 'PdfCraft', '📄', 'PDF'], ['photocraft', 'PhotoCraft', '📷', 'photos'], ['vectorcraft', 'VectorCraft', '✒', 'vector drawing'], ['designcraft', 'DesignCraft', '✏', 'design'], ['gridcraft', 'GridCraft', '▦', 'grids and sheets'], ['cadcraft', 'CadCraft', '📐', 'CAD'], ['figcraft', 'FigCraft', '🧩', 'figures'], ['effectcraft', 'EffectCraft', '✨', 'effects'], ['filmcraft', 'FilmCraft', '🎬', 'film'], ['soundcraft', 'SoundCraft', '🎵', 'sound'], ['lightcraft', 'LightCraft', '💡', 'lighting'], ['materialcraft', 'MaterialCraft', '🧱', 'materials'], ['texturecraft', 'TextureCraft', '🪵', 'textures']];
+  const OTHER = []; // every app now has the one account
+  const W = 52, KEY = 'craft-rail';
+  // where this app is, and where its neighbours are (a web address, or a folder on this computer)
+  const parts = location.pathname.split('/'), file = /\.html?$/i.test(parts[parts.length - 1]) ? parts.pop() : (parts.pop(), ''), here = (parts[parts.length - 1] || '').toLowerCase();
+  const all = UNIFIED.concat(ARTCRAFT, OTHER), me = all.find((a) => a[0] === here) ? here : (all.find((a) => location.pathname.toLowerCase().includes('/' + a[0] + '/')) || [''])[0];
+  const baseOf = () => { const i = location.href.toLowerCase().lastIndexOf('/' + me + '/'); return i < 0 ? null : location.href.slice(0, i + 1); };
+  const urlOf = (app) => { const b = baseOf(); if (!b) return null; return b + app + '/' + (location.protocol === 'file:' ? 'index.html' : ''); };
+  // folded or open, remembered: phones and folded phones (narrower than 600) on their own, and folded at first there (the page needs the room)
+  const SMALL = () => innerWidth < 600, FKEY = () => (SMALL() ? KEY + '-phone' : KEY);
+  const foldedNow = () => { let v = null; try { v = localStorage.getItem(FKEY()); } catch (e) { /* blocked */ } return v ? v === 'folded' : SMALL(); };
+  let folded = foldedNow(), wasSmall = SMALL();
+  window.addEventListener('resize', () => { if (SMALL() === wasSmall) return; wasSmall = SMALL(); const f = foldedNow(); if (f !== folded) { folded = f; paint(); } });
+  // wide: the bar opened out to show the apps' names (» / «, remembered); WW its width
+  let wide = false; try { wide = localStorage.getItem(KEY + '-wide') === '1'; } catch (e) { /* blocked */ }
+  const WW = 196;
+  let allowed = null;   // the apps on this site your account may use (null: the usual list)
+  const css = `.craft-rail{position:fixed;left:0;top:0;bottom:0;width:${W}px;z-index:2400;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0;background:#14151b;border-right:1px solid #2c2f3a;font:12px/1.2 "Segoe UI",system-ui,sans-serif;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:#3a3e4c transparent;overscroll-behavior:contain;touch-action:pan-y}
+.craft-rail::-webkit-scrollbar{width:5px}.craft-rail::-webkit-scrollbar-thumb{background:#3a3e4c;border-radius:3px}.craft-rail a{position:relative;display:grid;place-items:center;width:40px;height:38px;border-radius:9px;text-decoration:none;font-size:19px;color:#e8e9ee;flex:none}
+.craft-rail a:hover{background:#2a2d38}.craft-rail a.on{background:#2f5bea;box-shadow:0 0 0 1px #6f8ff5 inset}.craft-rail a.off{opacity:.35;cursor:default}
+.craft-rail .sep{flex:1 1 12px;min-height:12px}.craft-rail .lbl{font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:#7d8394;margin:6px 0 2px;text-align:center;line-height:1.1}
+.craft-rail .ends{display:flex;gap:2px;flex:none}.craft-rail .ends .fold{width:19px}.craft-rail.wide{width:${WW}px;align-items:stretch;padding:6px 8px}.craft-rail.wide .ends{justify-content:space-between}.craft-rail.wide .ends .fold{width:30px}
+.craft-rail .nm{display:none}.craft-rail.wide a{width:auto;grid-template-columns:28px 1fr;justify-items:start;gap:8px;padding:0 8px;font-size:18px}.craft-rail.wide a .nm{display:block;font-size:13px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}.craft-rail.wide a .nm small{display:block;font-size:10.5px;color:#9aa0b0;overflow:hidden;text-overflow:ellipsis}.craft-rail.wide a.on .nm small{color:#dfe6ff}.craft-rail.wide a .tip{display:none!important}.craft-rail.wide .lbl{text-align:left;padding-left:8px}
+.craft-rail .fold{width:40px;height:22px;border:0;border-radius:7px;background:none;color:#7d8394;cursor:pointer;font-size:13px}.craft-rail .fold:hover{background:#2a2d38;color:#e8e9ee}
+.craft-rail a .tip{display:none;position:fixed;left:${W + 4}px;padding:4px 9px;border-radius:7px;background:#000d;color:#fff;white-space:nowrap;font-size:12.5px;pointer-events:none;z-index:2401}
+.craft-rail a:hover .tip{display:block}.craft-rail-tab{position:fixed;left:0;top:50%;transform:translateY(-50%);z-index:2400;width:12px;height:56px;touch-action:manipulation;border:0;border-radius:0 7px 7px 0;background:#2f5bea;color:#fff;cursor:pointer;padding:0;font-size:11px}
+html.craft-railed body{margin-left:var(--craft-rail,0px)!important}
+/* the apps' start pages (What do you want to make?) cover the window: they begin right of the bar, and on tablets and phones everything on them is 10% smaller */
+html.craft-railed :is(#start.start,#lc-start.lc-start){left:var(--craft-rail,0px)!important}
+@media (max-width:1100px){:is(#start.start,#lc-start.lc-start)>*{zoom:.9}}
+@media (pointer:coarse){.craft-rail-tab{width:18px;height:64px;font-size:14px}}
+@media print{.craft-rail,.craft-rail-tab{display:none!important}html.craft-railed body{margin-left:0!important}}`;
+  function paint() {
+    document.querySelectorAll('.craft-rail, .craft-rail-tab').forEach((x) => x.remove());
+    if (!document.getElementById('craft-rail-css')) { const s = document.createElement('style'); s.id = 'craft-rail-css'; s.textContent = css; document.head.append(s); }
+    document.documentElement.classList.add('craft-railed');
+    document.documentElement.style.setProperty('--craft-rail', folded ? '0px' : (wide ? WW : W) + 'px');
+    if (folded) { const t = document.createElement('button'); t.className = 'craft-rail-tab'; t.title = 'Craft apps'; t.textContent = '›'; t.onclick = () => setFold(false); document.body.append(t); return; }
+    const bar = document.createElement('nav'); bar.className = 'craft-rail' + (wide ? ' wide' : ''); bar.setAttribute('aria-label', 'Craft apps');
+    const link = ([id, name, ic, what]) => { const a = document.createElement('a'), u = urlOf(id), may = !allowed || allowed.includes(id) || id === 'accountcraft';
+      a.className = (id === me ? 'on' : '') + (may ? '' : ' off'); a.innerHTML = `${ic}<span class="nm">${name}${what ? `<small>${what}</small>` : ''}</span><span class="tip">${name}${what ? ' · ' + what : ''}${id === me ? ' (here)' : !may ? ' (not on this site, or not for your account)' : ''}</span>`;
+      a.setAttribute('aria-label', name); if (u && id !== me && may) a.href = u; else a.removeAttribute('href');
+      a.onclick = (e) => { if (!a.href || id === me) { e.preventDefault(); return; } window.dispatchEvent(new CustomEvent('craft-leave', { detail: { to: id } })); };
+      return a; };
+    const lbl = (t) => { const d = document.createElement('div'); d.className = 'lbl'; d.textContent = t; return d; };
+    const fold = document.createElement('button'); fold.className = 'fold'; fold.title = 'Fold the apps bar away'; fold.textContent = '‹'; fold.onclick = () => setFold(true);
+    const widen = document.createElement('button'); widen.className = 'fold'; widen.title = wide ? 'Narrow: icons only' : 'Open out: the apps with their names'; widen.textContent = wide ? '«' : '»'; widen.onclick = () => setWide(!wide);
+    const ends = document.createElement('div'); ends.className = 'ends'; ends.append(fold, widen);
+    const show = (list) => list.filter(([id]) => !allowed || allowed.includes(id) || id === me || id === 'accountcraft');
+    bar.append(ends, lbl('One account'), ...show(UNIFIED).map(link), Object.assign(document.createElement('div'), { className: 'sep' }), lbl('ArtCraft apps'), ...show(ARTCRAFT).map(link), ...(OTHER.length ? [Object.assign(document.createElement('div'), { className: 'sep' }), lbl('Other apps'), ...show(OTHER).map(link)] : []));
+    document.body.append(bar);
+  }
+  function setWide(f) { wide = f; try { localStorage.setItem(KEY + '-wide', f ? '1' : '0'); } catch (e) { /* blocked */ } paint(); window.dispatchEvent(new Event('resize')); }
+  function setFold(f) { folded = f; try { localStorage.setItem(FKEY(), f ? 'folded' : 'open'); } catch (e) { /* blocked */ } paint(); window.dispatchEvent(new Event('resize')); }
+  // the apps on this site (logged in, on a web address): only those that are there and that your account may use
+  async function learn() {
+    const A = window.CraftAccount; if (!A || !A.user || !A.user() || !/^https?:/.test(location.protocol)) { allowed = null; return paint(); }
+    try { const r = await A.api('GET', 'apps'), mine = A.user().apps; allowed = (r.apps || []).filter((a) => !mine || mine.includes(a)).concat(['accountcraft', me]); } catch (e) { allowed = null; }
+    paint();
+  }
+  const go = () => { paint(); learn(); window.addEventListener('craft-account', learn); };
+  if (document.body) go(); else document.addEventListener('DOMContentLoaded', go);
+  window.CraftRail = { UNIFIED, ARTCRAFT, OTHER, fold: setFold, wide: setWide, refresh: learn };
 })();
 
 </script>
