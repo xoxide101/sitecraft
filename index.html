@@ -276,7 +276,7 @@ button { font: inherit; color: inherit; }
 .tpl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px; }
 
 /* Backstage (File tab) */
-.backstage { position: fixed; inset: 0; z-index: 1700; display: grid; grid-template-columns: 230px 1fr; background: var(--bg); }
+.backstage { position: fixed; inset: 0 0 0 var(--craft-rail, 0px); z-index: 1700; display: grid; grid-template-columns: 230px 1fr; background: var(--bg); }
 .bs-nav { background: linear-gradient(170deg, var(--accent), #7b4fd6); color: #fff; padding: 18px 12px; display: flex; flex-direction: column; gap: 2px; overflow: auto; }
 .bs-nav .bs-back { display: flex; align-items: center; gap: 8px; border: 0; background: rgba(255,255,255,.14); color: #fff; padding: 8px 10px; border-radius: 8px; cursor: pointer; font: inherit; font-weight: 600; margin-bottom: 14px; }
 .bs-nav button.bs-item { text-align: left; border: 0; background: transparent; color: #fff; padding: 9px 12px; border-radius: 8px; cursor: pointer; font: inherit; font-size: 14px; }
