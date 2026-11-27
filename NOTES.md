@@ -157,3 +157,8 @@ Insert › Barcode (ribbon, Insert › Pictures and media) and "Barcode or QR co
 - 2026-11-19 SiteCraft's File screen in one column on phones; its status bar scrolls sideways.
 - 2026-11-19 Keep in My pictures asks how (CraftClipartPicker.keepAsk): SVG (vector, every detail), a picture (PNG), or the working file (the app's own file, like a PSD, kept with a picture of it). A kept working file shows Open it here in the app that made it (open({ onSource })) and Save the working file… anywhere. LogoCraft (File: SVG / PNG / .logocraft.json), 3DCraft (PNG / .3dcraft.json), BarcodeCraft (each library barcode: SVG / PNG), ImageCraft (the picture as a lossless PNG). Pictures kept in apps without the account stay in this browser and go up to the account the next time My pictures opens in an app that is logged in.
 - 2026-11-19 craft-keys.js brought up to the shared version (the same in every Craft app; copying works on plain http).
+
+## 2026-11-27: the Craft Hub
+- launcher.json: this app's card in the Craft Hub (the launcher at /craft/: an expanding pie of every app, read from each folder's launcher.json); launcher.png: its picture there
+- The Craft rail (the bar down the left) has the Craft Hub at the top, back to /craft/ from any page
+- See every app: https://github.com/xoxide101
