@@ -1,0 +1,9 @@
+{
+ "name": "SiteCraft",
+ "icon": "🌐",
+ "about": "Web sites",
+ "group": "Make and design",
+ "order": 70,
+ "entry": "index.html",
+ "status": "beta"
+}
